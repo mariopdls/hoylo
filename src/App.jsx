@@ -15,8 +15,8 @@ import Perfil from './pages/Perfil'
 import Amigos from './pages/Amigos'
 import Cargando from './components/Cargando'
 import ModalConfig from './components/ModalConfig'
-import logo from './assets/logo3.png'
-import lohago from './assets/lohago.png'
+import logo from './assets/logo3.PNG'
+import lohago from './assets/lohago.PNG'
 import i18n from './i18n/i18n.js'
 
 function App() {
