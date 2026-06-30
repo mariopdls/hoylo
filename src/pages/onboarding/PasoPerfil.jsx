@@ -86,9 +86,10 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
               placeholder={t('perfil.username')}
               value={username}
               onChange={e => {
-                setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))
-                setErrorUsername(null)
-              }}
+              const valor = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+              setUsername(valor)
+              setErrorUsername(null)
+            }}
             />
             {errorUsername && (
               <p style={{ fontSize: '12px', color: '#E24B4A', marginTop: '4px', paddingLeft: '8px' }}>

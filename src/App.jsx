@@ -32,6 +32,54 @@ function App() {
   const [mostrarTagline, setMostrarTagline] = useState(false)
   const [animandoLogo, setAnimandoLogo] = useState(false)
   const [desvaneciendo, setDesvaneciendo] = useState(false)
+  const [notificacionesPendientes, setNotificacionesPendientes] = useState(0)
+
+  const cargarNotificacionesPendientes = async (user) => {
+    const { data: perfilData } = await supabase
+      .from('perfiles')
+      .select('username')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!perfilData?.username) return
+
+    const { count: countSolicitudes } = await supabase
+      .from('solicitudes_amistad')
+      .select('id', { count: 'exact', head: true })
+      .eq('para_usuario_id', user.id)
+      .eq('estado', 'pendiente')
+
+    const { count: countInvitaciones } = await supabase
+      .from('invitaciones')
+      .select('id', { count: 'exact', head: true })
+      .eq('para_username', perfilData.username)
+      .eq('estado', 'pendiente')
+
+    setNotificacionesPendientes((countSolicitudes || 0) + (countInvitaciones || 0))
+  }
+
+  const cargarPerfilYRetos = async (user) => {
+    const { data: perfilData } = await supabase
+      .from('perfiles')
+      .select('id, idioma')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (perfilData) {
+      setPaso(8)
+      if (perfilData.idioma) {
+        i18n.changeLanguage(perfilData.idioma)
+        setIdioma(perfilData.idioma)
+      }
+      const retosData = await cargarRetos(user.id)
+      setRetosUsuario(retosData)
+      await cargarNotificacionesPendientes(user)
+    } else {
+      setPaso(0)
+      setRespuestas({})
+      setRetosUsuario([])
+    }
+  }
 
   const guardarPerfilInicial = async (retos, idiomaActual) => {
     const perfilData = respuestas.perfil || {}
@@ -49,32 +97,47 @@ function App() {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    let activo = true
+
+    const inicializar = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
       const user = session?.user ?? null
+
+      if (!activo) return
+
       setUsuario(user)
 
       if (user) {
-        const [perfilData, retosData] = await Promise.all([
-          supabase.from('perfiles').select('id, idioma').eq('id', user.id).maybeSingle(),
-          cargarRetos(user.id)
-        ])
-
-        if (perfilData.data) {
-          setPaso(8)
-          if (perfilData.data.idioma) {
-            i18n.changeLanguage(perfilData.data.idioma)
-            setIdioma(perfilData.data.idioma)
-          }
-          setRetosUsuario(retosData)
-        }
+        await cargarPerfilYRetos(user)
       }
 
-      setCargandoAuth(false)
+      if (activo) setCargandoAuth(false)
+    }
+
+    inicializar()
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const user = session?.user ?? null
+      setUsuario(user)
+
+      if (event === 'SIGNED_IN' && user) {
+        setCargandoAuth(true)
+        await cargarPerfilYRetos(user)
+        setCargandoAuth(false)
+      }
+
+      if (event === 'SIGNED_OUT') {
+        setPaso(0)
+        setRespuestas({})
+        setRetosUsuario([])
+        setNotificacionesPendientes(0)
+      }
     })
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setUsuario(session?.user ?? null)
-    })
+    return () => {
+      activo = false
+      listener.subscription.unsubscribe()
+    }
   }, [])
 
   const siguiente = () => setPaso(p => p + 1)
@@ -112,7 +175,12 @@ function App() {
 
   if (!usuario) return (
     <div className="onboarding-wrapper">
-      <Login onLogin={setUsuario} />
+      <Login onLogin={async (user) => {
+        setCargandoAuth(true)
+        setUsuario(user)
+        await cargarPerfilYRetos(user)
+        setCargandoAuth(false)
+      }} />
     </div>
   )
 
@@ -149,57 +217,63 @@ function App() {
         <div className="app-container">
           <header className="app-header">
             <div className="header-logo" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <img
-              src={logo}
-              alt="Hoylo"
-              style={{
-                cursor: 'pointer',
-                animation: animandoLogo ? 'logoSalto 0.7s ease' : 'none'
-              }}
-              onClick={() => {
-                setAnimandoLogo(true)
-                setMostrarTagline(true)
-                setDesvaneciendo(false)
-                setTimeout(() => setDesvaneciendo(true), 1800)
-                setTimeout(() => {
-                  setAnimandoLogo(false)
-                  setMostrarTagline(false)
-                  setDesvaneciendo(false)
-                }, 2500)
-              }}
-            />
-             <div style={{ height: '20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
-            {mostrarTagline && (
               <img
-                src={lohago}
-                alt="Hoy lo hago"
+                src={logo}
+                alt="Hoylo"
                 style={{
-                  height: '16px',
-                  animation: desvaneciendo ? 'fadeOut 0.7s ease forwards' : 'fadeInUp 0.4s ease'
+                  cursor: 'pointer',
+                  animation: animandoLogo ? 'logoSalto 0.7s ease' : 'none'
+                }}
+                onClick={() => {
+                  setAnimandoLogo(true)
+                  setMostrarTagline(true)
+                  setDesvaneciendo(false)
+                  setTimeout(() => setDesvaneciendo(true), 1800)
+                  setTimeout(() => {
+                    setAnimandoLogo(false)
+                    setMostrarTagline(false)
+                    setDesvaneciendo(false)
+                  }, 2500)
                 }}
               />
-            )}
-          </div>
-          </div>
+              <div style={{ height: '20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                {mostrarTagline && (
+                  <img
+                    src={lohago}
+                    alt="Hoy lo hago"
+                    style={{
+                      height: '16px',
+                      animation: desvaneciendo ? 'fadeOut 0.7s ease forwards' : 'fadeInUp 0.4s ease'
+                    }}
+                  />
+                )}
+              </div>
+            </div>
             <div className="header-icons" style={{ display: 'flex', alignItems: 'center' }}>
-            <button
-              className="header-icon"
-              onClick={() => setModalConfig(true)}
-              aria-label="Configuración"
-              style={{ fontSize: '25px', padding: '8px' }}
-            >
-              <i className="ti ti-settings"></i>
-            </button>
-          </div>
+              <button
+                className="header-icon"
+                onClick={() => setModalConfig(true)}
+                aria-label="Configuración"
+                style={{ fontSize: '26px', padding: '8px' }}
+              >
+                <i className="ti ti-settings"></i>
+              </button>
+            </div>
           </header>
 
           <main className="app-content">
             {paginaActiva === 'inicio' && <Home retos={retosUsuario} onNuevoReto={añadirReto} onEliminarReto={eliminarRetoUsuario} onActualizarReto={actualizarReto} />}
             {paginaActiva === 'descubrir' && <div>Descubrir</div>}
-            {paginaActiva === 'amigos' && <Amigos usuario={usuario} onRecargarRetos={async () => {
-              const retos = await cargarRetos(usuario.id)
-              setRetosUsuario(retos)
-            }} />}
+            {paginaActiva === 'amigos' && (
+              <Amigos
+                usuario={usuario}
+                onRecargarRetos={async () => {
+                  const retos = await cargarRetos(usuario.id)
+                  setRetosUsuario(retos)
+                }}
+                onRecargarNotificaciones={() => cargarNotificacionesPendientes(usuario)}
+              />
+            )}
             {paginaActiva === 'perfil' && <Perfil usuario={usuario} />}
           </main>
 
@@ -212,9 +286,20 @@ function App() {
               <i className="ti ti-compass"></i>
               {idioma === 'es' ? 'Descubrir' : 'Discover'}
             </button>
-            <button className={`nav-item ${paginaActiva === 'amigos' ? 'active' : ''}`} onClick={() => setPaginaActiva('amigos')}>
+            <button
+              className={`nav-item ${paginaActiva === 'amigos' ? 'active' : ''}`}
+              onClick={() => setPaginaActiva('amigos')}
+              style={{ position: 'relative' }}
+            >
               <i className="ti ti-users"></i>
               {idioma === 'es' ? 'Amigos' : 'Friends'}
+              {notificacionesPendientes > 0 && (
+                <span style={{
+                  position: 'absolute', top: '0px', right: '14px',
+                  width: '8px', height: '8px', borderRadius: '50%',
+                  background: '#E24B4A'
+                }} />
+              )}
             </button>
             <button className={`nav-item ${paginaActiva === 'perfil' ? 'active' : ''}`} onClick={() => setPaginaActiva('perfil')}>
               <i className="ti ti-user"></i>

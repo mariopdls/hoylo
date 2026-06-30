@@ -7,7 +7,7 @@ import {
   aceptarSolicitudAmistad, rechazarSolicitudAmistad, cargarAmigos
 } from '../services/social'
 
-function Amigos({ usuario, onRecargarRetos }) {
+function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
   const { t } = useTranslation()
   const [tab, setTab] = useState('solicitudes')
   const [invitacionesRetos, setInvitacionesRetos] = useState([])
@@ -49,11 +49,13 @@ function Amigos({ usuario, onRecargarRetos }) {
     await aceptarInvitacion(inv.id, inv.reto_id, usuario.id)
     setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
     onRecargarRetos()
+    onRecargarNotificaciones?.()
   }
 
   const handleRechazarReto = async (inv) => {
     await rechazarInvitacion(inv.id)
     setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
+    onRecargarNotificaciones?.()
   }
 
   const handleAceptarAmistad = async (sol) => {
@@ -61,11 +63,13 @@ function Amigos({ usuario, onRecargarRetos }) {
     setSolicitudesAmistad(prev => prev.filter(s => s.id !== sol.id))
     const amigosLista = await cargarAmigos()
     setAmigos(amigosLista)
+    onRecargarNotificaciones?.()
   }
 
   const handleRechazarAmistad = async (sol) => {
     await rechazarSolicitudAmistad(sol.id)
     setSolicitudesAmistad(prev => prev.filter(s => s.id !== sol.id))
+    onRecargarNotificaciones?.()
   }
 
   const handleEnviarSolicitud = async () => {
@@ -236,7 +240,7 @@ function Amigos({ usuario, onRecargarRetos }) {
                 className="input-reto"
                 placeholder="@username"
                 value={usernameSolicitar}
-                onChange={e => setUsernameSolicitar(e.target.value.toLowerCase().replace(/\s/g, ''))}
+                onChange={e => setUsernameSolicitar(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                 onKeyDown={e => { if (e.key === 'Enter') handleEnviarSolicitud() }}
               />
               <button className="btn-añadir" onClick={handleEnviarSolicitud}>
