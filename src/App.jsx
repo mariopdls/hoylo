@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './services/supabase'
 import { cargarRetos, guardarReto, eliminarReto } from './services/retos'
-import Login from './pages/auth/Login'
+import Login from './pages/auth/login'
 import SelectorIdioma from './pages/onboarding/SelectorIdioma'
 import PasoPerfil from './pages/onboarding/PasoPerfil'
 import PasoAficiones from './pages/onboarding/PasoAficiones'
