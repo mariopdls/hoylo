@@ -1,0 +1,116 @@
+{
+  "bienvenida": {
+    "titulo": "Hola, soy tu guía de retos.",
+    "texto1": "Estoy aquí para ayudarte a crear pequeños hábitos que de verdad encajen con tu vida. Sin presiones, sin juicios.",
+    "texto2": "Solo te voy a hacer unas preguntas para conocerte un poco mejor. ¿Empezamos?",
+    "boton": "Venga, empezamos"
+  },
+  "racha": {
+    "titulo": "¿Estás pasando una mala racha?",
+    "subtitulo": "No tienes que contarme nada que no quieras. Solo quiero saber cómo estás para ajustar los retos a tu momento.",
+    "mal": "Últimamente está siendo duro",
+    "bien": "Estoy bien, gracias",
+    "nose": "No lo sé muy bien",
+    "prefiero": "Prefiero no contestar"
+  },
+  "mejorar": {
+    "titulo": "¿Qué crees que podrías mejorar?",
+    "subtitulo": "No es que lo estés haciendo mal — a veces solo hay formas que nos funcionan mejor. Elige lo que resuene contigo.",
+    "actividad": "Moverme más",
+    "constancia": "Ser más constante",
+    "alimentacion": "Comer mejor",
+    "descanso": "Descansar de verdad",
+    "mente": "Cuidar mi cabeza",
+    "aprender": "Aprender algo nuevo",
+    "boton": "Siguiente"
+  },
+  "constancia": {
+    "titulo": "¿Cómo te va con los hábitos?",
+    "subtitulo": "No hay respuesta mala aquí. Si me dices que te cuesta, te preparo retos más llevaderos para que vayas cogiendo el ritmo sin agobiarte.",
+    "mucho": "Suelo cumplir lo que me propongo",
+    "regular": "Depende del día, soy irregular",
+    "poco": "Me cuesta mantener el hilo",
+    "nose": "Nunca lo he intentado en serio"
+  },
+  "retos": {
+    "titulo": "¿Tienes algún reto en mente?",
+    "subtitulo": "Si ya sabes lo que quieres, añade los que quieras.",
+    "placeholder": "Ej: leer 10 páginas cada día...",
+    "separador": "Por si te puedo inspirar...",
+    "duracion": "Duración:",
+    "boton": "Empezar",
+    "cargando": "Preparando tus retos...",
+    "cargandoSub": "Un momento, estoy pensando en lo mejor para ti.",
+    "error": "No he podido generar los retos, intenta de nuevo."
+  },
+  "home": {
+    "saludoManana": "¡Buenos días!",
+    "saludoTarde": "¡Buenas tardes!",
+    "saludoNoche": "¡Buenas noches!",
+    "retosHoy": "Tus retos de hoy:",
+    "sinRetos": "No tienes retos activos todavía.",
+    "nuevoBanner": "¿Pensando en un nuevo reto?",
+    "nuevoSub": "Añade uno cuando quieras"
+  },
+  "detalle": {
+    "participantes": "Participantes de hoy",
+    "subirFoto": "📷 ¡Sube tu foto!",
+    "fotoSubida": "✓ Foto subida hoy",
+    "completado": "completado",
+    "dia": "Día",
+    "de": "de"
+  },
+  "nav": {
+    "inicio": "Inicio",
+    "amigos": "Amigos",
+    "descubrir": "Descubrir",
+    "perfil": "Perfil"
+  },
+  "eliminar": {
+    "titulo": "Eliminar reto",
+    "pregunta": "¿Estás seguro de que quieres eliminar",
+    "aviso": "Esta acción no se puede deshacer.",
+    "cancelar": "Cancelar",
+    "confirmar": "Eliminar"
+  },
+  "perfil": {
+    "titulo": "Cuéntanos sobre ti",
+    "subtitulo": "Solo unos datos básicos para personalizar tu experiencia.",
+    "nombre": "Tu nombre",
+    "username": "@username",
+    "usernameError": "Ese username ya está en uso, elige otro.",
+    "fechaError": "La fecha de nacimiento no es válida.",
+    "ubicacion": "📍 Selecciona tu ubicación",
+    "hombre": "Hombre",
+    "mujer": "Mujer",
+    "otro": "Otro",
+    "prefiero": "Prefiero no decir",
+    "siguiente": "Siguiente"
+  },
+  "aficiones": {
+    "titulo": "¿Qué te gusta hacer?",
+    "subtitulo": "Elige tus aficiones y te sugeriremos más relacionadas.",
+    "sugerencias": "Buscando más aficiones para ti...",
+    "separador": "También podría gustarte",
+    "siguiente": "Siguiente"
+  },
+  "miPerfil": {
+    "titulo": "Mi perfil",
+    "nombre": "Nombre",
+    "username": "Username",
+    "fechaNacimiento": "Fecha de nacimiento",
+    "sexo": "Sexo",
+    "ciudad": "Ciudad",
+    "pais": "País",
+    "aficiones": "Aficiones",
+    "cerrarSesion": "Cerrar sesión",
+    "guardar": "Guardar",
+    "cancelar": "Cancelar",
+    "cargando": "Cargando perfil...",
+    "guardando": "...",
+    "hombre": "Hombre",
+    "mujer": "Mujer",
+    "otro": "Otro",
+    "prefiero": "Prefiero no decir"
+  }
+}

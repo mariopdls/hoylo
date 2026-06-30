@@ -1,0 +1,116 @@
+{
+  "bienvenida": {
+    "titulo": "Hi, I'm your challenge guide.",
+    "texto1": "I'm here to help you build small habits that truly fit your life. No pressure, no judgment.",
+    "texto2": "I'll just ask you a few questions to get to know you better. Ready?",
+    "boton": "Let's go!"
+  },
+  "racha": {
+    "titulo": "Are you going through a rough patch?",
+    "subtitulo": "You don't have to share anything you don't want to. I just want to know how you're doing to adjust your challenges.",
+    "mal": "It's been tough lately",
+    "bien": "I'm doing fine, thanks",
+    "nose": "I'm not really sure",
+    "prefiero": "I'd rather not say"
+  },
+  "mejorar": {
+    "titulo": "What do you think you could improve?",
+    "subtitulo": "It's not that you're doing anything wrong — sometimes there are just better ways that work for us. Pick what resonates.",
+    "actividad": "Move more",
+    "constancia": "Be more consistent",
+    "alimentacion": "Eat better",
+    "descanso": "Rest properly",
+    "mente": "Take care of my mind",
+    "aprender": "Learn something new",
+    "boton": "Next"
+  },
+  "constancia": {
+    "titulo": "How do you do with habits?",
+    "subtitulo": "There's no wrong answer here. If you tell me it's hard, I'll make your challenges easier so you can build momentum.",
+    "mucho": "I usually stick to what I set out to do",
+    "regular": "Depends on the day, I'm inconsistent",
+    "poco": "I struggle to keep going",
+    "nose": "I've never really tried"
+  },
+  "retos": {
+    "titulo": "Do you have a challenge in mind?",
+    "subtitulo": "If you already know what you want, add as many as you like.",
+    "placeholder": "E.g: read 10 pages every day...",
+    "separador": "In case I can inspire you...",
+    "duracion": "Duration:",
+    "boton": "Start",
+    "cargando": "Preparing your challenges...",
+    "cargandoSub": "One moment, thinking about what's best for you.",
+    "error": "Couldn't generate your challenges, please try again."
+  },
+  "home": {
+    "saludoManana": "Good morning!",
+    "saludoTarde": "Good afternoon!",
+    "saludoNoche": "Good evening!",
+    "retosHoy": "Your challenges today:",
+    "sinRetos": "You have no active challenges yet.",
+    "nuevoBanner": "Thinking about a new challenge?",
+    "nuevoSub": "Add one whenever you want"
+  },
+  "detalle": {
+    "participantes": "Today's participants",
+    "subirFoto": "📷 Upload your photo!",
+    "fotoSubida": "✓ Photo uploaded today",
+    "completado": "completed",
+    "dia": "Day",
+    "de": "of"
+  },
+  "nav": {
+    "inicio": "Home",
+    "amigos": "Friends",
+    "descubrir": "Discover",
+    "perfil": "Profile"
+  },
+  "eliminar": {
+    "titulo": "Delete challenge",
+    "pregunta": "Are you sure you want to delete",
+    "aviso": "This action cannot be undone.",
+    "cancelar": "Cancel",
+    "confirmar": "Delete"
+  },
+  "perfil": {
+    "titulo": "Tell us about you",
+    "subtitulo": "Just a few basics to personalize your experience.",
+    "nombre": "Your name",
+    "username": "@username",
+    "usernameError": "That username is already taken, choose another.",
+    "fechaError": "The date of birth is not valid.",
+    "ubicacion": "📍 Select your location",
+    "hombre": "Male",
+    "mujer": "Female",
+    "otro": "Other",
+    "prefiero": "Prefer not to say",
+    "siguiente": "Next"
+  },
+  "aficiones": {
+    "titulo": "What do you like to do?",
+    "subtitulo": "Choose your hobbies and we'll suggest more related ones.",
+    "sugerencias": "Looking for more hobbies for you...",
+    "separador": "You might also like",
+    "siguiente": "Next"
+  },
+  "miPerfil": {
+    "titulo": "My profile",
+    "nombre": "Name",
+    "username": "Username",
+    "fechaNacimiento": "Date of birth",
+    "sexo": "Gender",
+    "ciudad": "City",
+    "pais": "Country",
+    "aficiones": "Hobbies",
+    "cerrarSesion": "Sign out",
+    "guardar": "Save",
+    "cancelar": "Cancel",
+    "cargando": "Loading profile...",
+    "guardando": "...",
+    "hombre": "Male",
+    "mujer": "Female",
+    "otro": "Other",
+    "prefiero": "Prefer not to say"
+  }
+}
