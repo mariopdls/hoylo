@@ -15,6 +15,7 @@ import Perfil from './pages/Perfil'
 import Amigos from './pages/Amigos'
 import Cargando from './components/Cargando'
 import ModalConfig from './components/ModalConfig'
+import PullToRefresh from './components/PullToRefresh'
 import logo from './assets/logo3.png'
 import lohago from './assets/lohago.PNG'
 import i18n from './i18n/i18n.js'
@@ -262,7 +263,15 @@ function App() {
           </header>
 
           <main className="app-content">
-            {paginaActiva === 'inicio' && <Home retos={retosUsuario} onNuevoReto={añadirReto} onEliminarReto={eliminarRetoUsuario} onActualizarReto={actualizarReto} />}
+            {paginaActiva === 'inicio' && (
+              <PullToRefresh onRefresh={async () => {
+                const retos = await cargarRetos(usuario.id)
+                setRetosUsuario(retos)
+                await cargarNotificacionesPendientes(usuario)
+              }}>
+                <Home retos={retosUsuario} onNuevoReto={añadirReto} onEliminarReto={eliminarRetoUsuario} onActualizarReto={actualizarReto} />
+              </PullToRefresh>
+            )}
             {paginaActiva === 'descubrir' && <div>Descubrir</div>}
             {paginaActiva === 'amigos' && (
               <Amigos

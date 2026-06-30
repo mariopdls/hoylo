@@ -930,3 +930,8 @@ select.input-reto {
   80% { transform: scale(0.98) rotate(2deg); }
   100% { transform: scale(1) rotate(0deg); }
 }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

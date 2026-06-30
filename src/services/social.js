@@ -217,7 +217,7 @@ export async function cargarAmigos() {
         .select('nombre, username, avatar_url')
         .eq('id', a.amigo_id)
         .maybeSingle()
-      return perfil
+      return perfil ? { ...perfil, id: a.amigo_id } : null
     })
   )
 

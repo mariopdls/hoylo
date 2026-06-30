@@ -6,6 +6,7 @@ import {
   enviarSolicitudAmistad, cargarSolicitudesPendientes,
   aceptarSolicitudAmistad, rechazarSolicitudAmistad, cargarAmigos
 } from '../services/social'
+import PerfilAmigo from './PerfilAmigo'
 
 function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
   const { t } = useTranslation()
@@ -17,6 +18,7 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
   const [perfil, setPerfil] = useState(null)
   const [usernameSolicitar, setUsernameSolicitar] = useState('')
   const [mensaje, setMensaje] = useState(null)
+  const [amigoSeleccionado, setAmigoSeleccionado] = useState(null)
 
   useEffect(() => {
     cargarDatos()
@@ -85,6 +87,15 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
   }
 
   const totalPendientes = invitacionesRetos.length + solicitudesAmistad.length
+
+  if (amigoSeleccionado) {
+    return (
+      <PerfilAmigo
+        amigoId={amigoSeleccionado}
+        onVolver={() => setAmigoSeleccionado(null)}
+      />
+    )
+  }
 
   if (cargando) return (
     <div style={{ padding: '20px' }}>
@@ -212,7 +223,11 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
             </div>
           ) : (
             amigos.map((amigo, i) => (
-              <div key={i} className="config-fila" style={{ cursor: 'default' }}>
+              <div
+                key={i}
+                className="config-fila"
+                onClick={() => setAmigoSeleccionado(amigo.id)}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div className="participante-avatar" style={{ overflow: 'hidden' }}>
                     {amigo.avatar_url
@@ -225,6 +240,7 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{amigo.username}</p>
                   </div>
                 </div>
+                <i className="ti ti-chevron-right" style={{ color: 'var(--text-secondary)' }}></i>
               </div>
             ))
           )}
