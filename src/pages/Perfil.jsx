@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
+import { subirFoto } from '../services/cloudinary'
 
 const AFICIONES_ES = ['🎵 Música', '📚 Lectura', '🏃 Deporte', '🎨 Arte', '🎮 Videojuegos', '🍳 Cocina', '✈️ Viajes', '🌱 Naturaleza', '💻 Tecnología', '🎬 Cine', '🧘 Meditación', '📷 Fotografía']
 const AFICIONES_EN = ['🎵 Music', '📚 Reading', '🏃 Sport', '🎨 Art', '🎮 Video games', '🍳 Cooking', '✈️ Travel', '🌱 Nature', '💻 Technology', '🎬 Cinema', '🧘 Meditation', '📷 Photography']
@@ -11,6 +12,8 @@ function Perfil({ usuario }) {
   const [guardando, setGuardando] = useState(false)
   const [editando, setEditando] = useState(false)
   const [nuevaAficion, setNuevaAficion] = useState('')
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
+  const inputFotoRef = useRef(null)
   const [perfil, setPerfil] = useState({
     nombre: '',
     username: '',
@@ -18,7 +21,8 @@ function Perfil({ usuario }) {
     sexo: '',
     ciudad: '',
     pais: '',
-    aficiones: []
+    aficiones: [],
+    avatar_url: ''
   })
 
   const aficionesBase = i18n.language === 'es' ? AFICIONES_ES : AFICIONES_EN
@@ -45,6 +49,24 @@ function Perfil({ usuario }) {
       .upsert({ ...perfil, id: usuario.id }, { onConflict: 'id' })
     setGuardando(false)
     setEditando(false)
+  }
+
+  const handleFotoPerfil = async (e) => {
+    const archivo = e.target.files[0]
+    if (!archivo) return
+
+    setSubiendoFoto(true)
+    try {
+      const url = await subirFoto(archivo)
+      setPerfil(p => ({ ...p, avatar_url: url }))
+      await supabase
+        .from('perfiles')
+        .update({ avatar_url: url })
+        .eq('id', usuario.id)
+    } catch (err) {
+      console.error('Error subiendo avatar:', err)
+    }
+    setSubiendoFoto(false)
   }
 
   const toggleAficion = (aficion) => {
@@ -93,13 +115,48 @@ function Perfil({ usuario }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px' }}>
-        <div style={{
-          width: '80px', height: '80px', borderRadius: '50%',
-          background: 'var(--accent)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: '32px', color: 'white', fontWeight: '700'
-        }}>
-          {perfil.nombre ? perfil.nombre.charAt(0).toUpperCase() : usuario.email.charAt(0).toUpperCase()}
+        <div
+          style={{
+            width: '80px', height: '80px', borderRadius: '50%',
+            background: perfil.avatar_url ? 'transparent' : 'var(--accent)',
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: '32px', color: 'white', fontWeight: '700',
+            cursor: 'pointer', position: 'relative'
+          }}
+          onClick={() => inputFotoRef.current.click()}
+        >
+          {perfil.avatar_url ? (
+            <img
+              src={perfil.avatar_url}
+              alt="avatar"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+            />
+          ) : (
+            perfil.nombre ? perfil.nombre.charAt(0).toUpperCase() : usuario.email.charAt(0).toUpperCase()
+          )}
+
+          <div style={{
+            position: 'absolute', bottom: '-2px', right: '-2px',
+            width: '24px', height: '24px', borderRadius: '50%',
+            background: 'var(--accent)', border: '2px solid var(--bg-primary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <i className="ti ti-camera" style={{ color: 'white', fontSize: '12px' }}></i>
+          </div>
         </div>
+
+        <input
+          type="file"
+          accept="image/*"
+          ref={inputFotoRef}
+          style={{ display: 'none' }}
+          onChange={handleFotoPerfil}
+        />
+
+        {subiendoFoto && (
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '6px' }}>Subiendo...</p>
+        )}
+
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px' }}>{usuario.email}</p>
       </div>
 
