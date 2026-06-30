@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import logo from '../../assets/logo2.png'
+import logo from '../../assets/logo3.png'
 
 function Bienvenida({ onNext, onBack }) {
   const { t } = useTranslation()

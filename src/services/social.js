@@ -110,3 +110,116 @@ export async function abandonarReto(retoId, usuarioId) {
     .eq('reto_id', retoId)
     .eq('usuario_id', usuarioId)
 }
+
+
+export async function enviarSolicitudAmistad(usernameDestino) {
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data: perfilDestino } = await supabase
+    .from('perfiles')
+    .select('id')
+    .eq('username', usernameDestino)
+    .maybeSingle()
+
+  if (!perfilDestino) return { error: 'Usuario no encontrado' }
+  if (perfilDestino.id === user.id) return { error: 'No puedes enviarte una solicitud a ti mismo' }
+
+  const { data: yaSonAmigos } = await supabase
+    .from('amigos')
+    .select('id')
+    .eq('usuario_id', user.id)
+    .eq('amigo_id', perfilDestino.id)
+    .maybeSingle()
+
+  if (yaSonAmigos) return { error: 'Ya sois amigos' }
+
+  const { data: solicitudExistente } = await supabase
+    .from('solicitudes_amistad')
+    .select('id')
+    .eq('de_usuario_id', user.id)
+    .eq('para_usuario_id', perfilDestino.id)
+    .eq('estado', 'pendiente')
+    .maybeSingle()
+
+  if (solicitudExistente) return { error: 'Ya enviaste una solicitud a este usuario' }
+
+  const { error } = await supabase
+    .from('solicitudes_amistad')
+    .insert({
+      de_usuario_id: user.id,
+      para_usuario_id: perfilDestino.id
+    })
+
+  if (error) return { error: 'Error al enviar la solicitud' }
+  return { ok: true }
+}
+
+export async function cargarSolicitudesPendientes() {
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data } = await supabase
+    .from('solicitudes_amistad')
+    .select('id, de_usuario_id, creado_at')
+    .eq('para_usuario_id', user.id)
+    .eq('estado', 'pendiente')
+
+  if (!data) return []
+
+  const conPerfil = await Promise.all(
+    data.map(async (s) => {
+      const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('nombre, username, avatar_url')
+        .eq('id', s.de_usuario_id)
+        .maybeSingle()
+      return { ...s, perfil }
+    })
+  )
+
+  return conPerfil
+}
+
+export async function aceptarSolicitudAmistad(solicitudId, deUsuarioId) {
+  const { data: { user } } = await supabase.auth.getUser()
+
+  await supabase.from('amigos').insert([
+    { usuario_id: user.id, amigo_id: deUsuarioId },
+    { usuario_id: deUsuarioId, amigo_id: user.id }
+  ])
+
+  await supabase
+    .from('solicitudes_amistad')
+    .update({ estado: 'aceptada' })
+    .eq('id', solicitudId)
+}
+
+export async function rechazarSolicitudAmistad(solicitudId) {
+  await supabase
+    .from('solicitudes_amistad')
+    .update({ estado: 'rechazada' })
+    .eq('id', solicitudId)
+}
+
+export async function cargarAmigos() {
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data } = await supabase
+    .from('amigos')
+    .select('amigo_id')
+    .eq('usuario_id', user.id)
+
+  if (!data) return []
+
+  const conPerfil = await Promise.all(
+    data.map(async (a) => {
+      const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('nombre, username, avatar_url')
+        .eq('id', a.amigo_id)
+        .maybeSingle()
+      return perfil
+    })
+  )
+
+  return conPerfil.filter(Boolean)
+}

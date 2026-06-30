@@ -1,13 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
-import { cargarInvitacionesPendientes, aceptarInvitacion, rechazarInvitacion } from '../services/social'
+import {
+  cargarInvitacionesPendientes, aceptarInvitacion, rechazarInvitacion,
+  enviarSolicitudAmistad, cargarSolicitudesPendientes,
+  aceptarSolicitudAmistad, rechazarSolicitudAmistad, cargarAmigos
+} from '../services/social'
 
 function Amigos({ usuario, onRecargarRetos }) {
   const { t } = useTranslation()
-  const [invitaciones, setInvitaciones] = useState([])
+  const [tab, setTab] = useState('solicitudes')
+  const [invitacionesRetos, setInvitacionesRetos] = useState([])
+  const [solicitudesAmistad, setSolicitudesAmistad] = useState([])
+  const [amigos, setAmigos] = useState([])
   const [cargando, setCargando] = useState(true)
   const [perfil, setPerfil] = useState(null)
+  const [usernameSolicitar, setUsernameSolicitar] = useState('')
+  const [mensaje, setMensaje] = useState(null)
 
   useEffect(() => {
     cargarDatos()
@@ -24,22 +33,54 @@ function Amigos({ usuario, onRecargarRetos }) {
 
     if (data?.username) {
       const invs = await cargarInvitacionesPendientes(data.username)
-      setInvitaciones(invs)
+      setInvitacionesRetos(invs)
     }
+
+    const sols = await cargarSolicitudesPendientes()
+    setSolicitudesAmistad(sols)
+
+    const amigosLista = await cargarAmigos()
+    setAmigos(amigosLista)
 
     setCargando(false)
   }
 
-  const handleAceptar = async (inv) => {
+  const handleAceptarReto = async (inv) => {
     await aceptarInvitacion(inv.id, inv.reto_id, usuario.id)
-    setInvitaciones(prev => prev.filter(i => i.id !== inv.id))
+    setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
     onRecargarRetos()
   }
 
-  const handleRechazar = async (inv) => {
+  const handleRechazarReto = async (inv) => {
     await rechazarInvitacion(inv.id)
-    setInvitaciones(prev => prev.filter(i => i.id !== inv.id))
+    setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
   }
+
+  const handleAceptarAmistad = async (sol) => {
+    await aceptarSolicitudAmistad(sol.id, sol.de_usuario_id)
+    setSolicitudesAmistad(prev => prev.filter(s => s.id !== sol.id))
+    const amigosLista = await cargarAmigos()
+    setAmigos(amigosLista)
+  }
+
+  const handleRechazarAmistad = async (sol) => {
+    await rechazarSolicitudAmistad(sol.id)
+    setSolicitudesAmistad(prev => prev.filter(s => s.id !== sol.id))
+  }
+
+  const handleEnviarSolicitud = async () => {
+    if (!usernameSolicitar.trim()) return
+    const resultado = await enviarSolicitudAmistad(usernameSolicitar.trim())
+    if (resultado.error) {
+      setMensaje({ tipo: 'error', texto: resultado.error })
+    } else {
+      setMensaje({ tipo: 'ok', texto: 'Solicitud enviada' })
+      setUsernameSolicitar('')
+    }
+    setTimeout(() => setMensaje(null), 3000)
+  }
+
+  const totalPendientes = invitacionesRetos.length + solicitudesAmistad.length
 
   if (cargando) return (
     <div style={{ padding: '20px' }}>
@@ -51,67 +92,180 @@ function Amigos({ usuario, onRecargarRetos }) {
     <div style={{ paddingBottom: '20px' }}>
       <p className="guia-intro" style={{ marginBottom: '16px' }}>Amigos</p>
 
-      <div style={{ marginBottom: '24px' }}>
-        <p className="detalle-seccion-titulo" style={{ marginBottom: '12px' }}>Invitaciones pendientes</p>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+        <button
+          className={`btn-dias ${tab === 'solicitudes' ? 'btn-dias-activo' : ''}`}
+          onClick={() => setTab('solicitudes')}
+          style={{ position: 'relative' }}
+        >
+          Solicitudes {totalPendientes > 0 && `(${totalPendientes})`}
+        </button>
+        <button
+          className={`btn-dias ${tab === 'amigos' ? 'btn-dias-activo' : ''}`}
+          onClick={() => setTab('amigos')}
+        >
+          Amigos ({amigos.length})
+        </button>
+        <button
+          className={`btn-dias ${tab === 'buscar' ? 'btn-dias-activo' : ''}`}
+          onClick={() => setTab('buscar')}
+        >
+          Añadir
+        </button>
+      </div>
 
-        {invitaciones.length === 0 ? (
-          <div style={{
-            background: 'var(--bg-card)', border: '0.5px solid var(--border)',
-            borderRadius: '14px', padding: '20px', textAlign: 'center'
-          }}>
-            <p className="guia-texto" style={{ fontSize: '13px' }}>No tienes invitaciones pendientes</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {invitaciones.map(inv => (
-              <div key={inv.id} style={{
-                background: 'var(--bg-card)', border: '0.5px solid var(--border)',
-                borderRadius: '14px', padding: '14px 16px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '24px' }}>{inv.retos?.emoji}</span>
-                  <div style={{ flex: 1 }}>
-                    <p className="reto-titulo">{inv.retos?.titulo}</p>
-                    <p className="reto-dias">
-                      {inv.retos?.dias} días · de @{inv.perfiles?.username}
-                    </p>
+      {tab === 'solicitudes' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          {solicitudesAmistad.length > 0 && (
+            <div>
+              <p className="detalle-seccion-titulo" style={{ marginBottom: '10px' }}>Solicitudes de amistad</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {solicitudesAmistad.map(sol => (
+                  <div key={sol.id} className="config-fila" style={{ cursor: 'default' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div className="participante-avatar">
+                        {sol.perfil?.nombre?.charAt(0).toUpperCase() || '?'}
+                      </div>
+                      <div>
+                        <p className="reto-titulo">{sol.perfil?.nombre}</p>
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{sol.perfil?.username}</p>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        onClick={() => handleRechazarAmistad(sol)}
+                        style={{ background: 'var(--bg-secondary)', border: '0.5px solid var(--border)', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)' }}
+                      >
+                        <i className="ti ti-x"></i>
+                      </button>
+                      <button
+                        onClick={() => handleAceptarAmistad(sol)}
+                        style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px', color: 'white' }}
+                      >
+                        <i className="ti ti-check"></i>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {invitacionesRetos.length > 0 && (
+            <div>
+              <p className="detalle-seccion-titulo" style={{ marginBottom: '10px' }}>Invitaciones a retos</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {invitacionesRetos.map(inv => (
+                  <div key={inv.id} style={{
+                    background: 'var(--bg-card)', border: '0.5px solid var(--border)',
+                    borderRadius: '14px', padding: '14px 16px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '24px' }}>{inv.retos?.emoji}</span>
+                      <div style={{ flex: 1 }}>
+                        <p className="reto-titulo">{inv.retos?.titulo}</p>
+                        <p className="reto-dias">{inv.retos?.dias} días · de @{inv.perfiles?.username}</p>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        className="btn-principal"
+                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '0.5px solid var(--border)' }}
+                        onClick={() => handleRechazarReto(inv)}
+                      >
+                        Rechazar
+                      </button>
+                      <button className="btn-principal" onClick={() => handleAceptarReto(inv)}>
+                        Unirme
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {totalPendientes === 0 && (
+            <div style={{
+              background: 'var(--bg-card)', border: '0.5px solid var(--border)',
+              borderRadius: '14px', padding: '20px', textAlign: 'center'
+            }}>
+              <p className="guia-texto" style={{ fontSize: '13px' }}>No tienes solicitudes pendientes</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'amigos' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {amigos.length === 0 ? (
+            <div style={{
+              background: 'var(--bg-card)', border: '0.5px solid var(--border)',
+              borderRadius: '14px', padding: '20px', textAlign: 'center'
+            }}>
+              <p className="guia-texto" style={{ fontSize: '13px' }}>Aún no tienes amigos en Hoylo</p>
+            </div>
+          ) : (
+            amigos.map((amigo, i) => (
+              <div key={i} className="config-fila" style={{ cursor: 'default' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div className="participante-avatar" style={{ overflow: 'hidden' }}>
+                    {amigo.avatar_url
+                      ? <img src={amigo.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : amigo.nombre?.charAt(0).toUpperCase()
+                    }
+                  </div>
+                  <div>
+                    <p className="reto-titulo">{amigo.nombre}</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{amigo.username}</p>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    className="btn-principal"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '0.5px solid var(--border)' }}
-                    onClick={() => handleRechazar(inv)}
-                  >
-                    Rechazar
-                  </button>
-                  <button
-                    className="btn-principal"
-                    onClick={() => handleAceptar(inv)}
-                  >
-                    Unirme
-                  </button>
-                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div>
-        <p className="detalle-seccion-titulo" style={{ marginBottom: '4px' }}>Tu username</p>
-        <p className="guia-texto" style={{ fontSize: '13px', marginBottom: '12px' }}>
-          Comparte tu username para que tus amigos puedan invitarte a retos.
-        </p>
-        <div style={{
-          background: 'var(--bg-card)', border: '1.5px solid var(--accent)',
-          borderRadius: '14px', padding: '14px 16px', textAlign: 'center'
-        }}>
-          <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>
-            @{perfil?.username || '—'}
-          </p>
+            ))
+          )}
         </div>
-      </div>
+      )}
+
+      {tab === 'buscar' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <p className="detalle-seccion-titulo" style={{ marginBottom: '8px' }}>Añadir amigo</p>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                className="input-reto"
+                placeholder="@username"
+                value={usernameSolicitar}
+                onChange={e => setUsernameSolicitar(e.target.value.toLowerCase().replace(/\s/g, ''))}
+                onKeyDown={e => { if (e.key === 'Enter') handleEnviarSolicitud() }}
+              />
+              <button className="btn-añadir" onClick={handleEnviarSolicitud}>
+                <i className="ti ti-send"></i>
+              </button>
+            </div>
+            {mensaje && (
+              <p style={{ fontSize: '12px', color: mensaje.tipo === 'ok' ? '#3B6D11' : '#E24B4A', marginTop: '6px', paddingLeft: '4px' }}>
+                {mensaje.texto}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <p className="detalle-seccion-titulo" style={{ marginBottom: '4px' }}>Tu username</p>
+            <p className="guia-texto" style={{ fontSize: '13px', marginBottom: '12px' }}>
+              Comparte tu username para que tus amigos puedan añadirte.
+            </p>
+            <div style={{
+              background: 'var(--bg-card)', border: '1.5px solid var(--accent)',
+              borderRadius: '14px', padding: '14px 16px', textAlign: 'center'
+            }}>
+              <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>
+                @{perfil?.username || '—'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,7 +1,6 @@
-const CACHE_NAME = 'hoylo-v1'
+const CACHE_NAME = 'hoylo-v2'
 const STATIC_ASSETS = [
   '/',
-  '/index.html',
   '/manifest.json'
 ]
 
@@ -22,6 +21,10 @@ self.addEventListener('activate', (e) => {
 })
 
 self.addEventListener('fetch', (e) => {
+  if (e.request.url.includes('/assets/')) {
+    e.respondWith(fetch(e.request))
+    return
+  }
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   )
