@@ -62,3 +62,40 @@ Exact format:
   const texto = data.choices[0].message.content
   return JSON.parse(texto)
 }
+
+export async function generarRetosDelMomento(idioma = 'es') {
+  const fecha = new Date()
+  const mes = fecha.toLocaleDateString(idioma === 'es' ? 'es-ES' : 'en-US', { month: 'long' })
+  const estacion = (fecha.getMonth() >= 2 && fecha.getMonth() <= 4) ? 'primavera'
+    : (fecha.getMonth() >= 5 && fecha.getMonth() <= 7) ? 'verano'
+    : (fecha.getMonth() >= 8 && fecha.getMonth() <= 10) ? 'otoño' : 'invierno'
+
+  const prompt = idioma === 'es'
+    ? `Genera exactamente 6 retos de hábitos saludables y positivos adecuados para el mes de ${mes}, en plena ${estacion}.
+Los retos deben ser apropiados para todas las edades, completamente seguros, sin ninguna connotación política, religiosa, sexual, violenta u ofensiva.
+Cada uno debe tener: título corto, emoji representativo y duración en días (7, 14, 21 o 30).
+Responde ÚNICAMENTE con un array JSON válido, sin texto extra, sin markdown.
+Formato: [{ "emoji": "🌻", "titulo": "Cuida una planta cada día", "dias": 21 }]`
+    : `Generate exactly 6 healthy and positive habit challenges suitable for the month of ${mes}.
+Challenges must be appropriate for all ages, completely safe, with no political, religious, sexual, violent, or offensive connotations.
+Each one must have: short title, representative emoji, and duration in days (7, 14, 21, or 30).
+Reply ONLY with a valid JSON array, no extra text, no markdown.
+Format: [{ "emoji": "🌻", "titulo": "Take care of a plant daily", "dias": 21 }]`
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500
+    })
+  })
+
+  const data = await response.json()
+  const texto = data.choices[0].message.content
+  return JSON.parse(texto)
+}

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { actualizarTituloReto, completarDia } from '../services/retos'
 import { subirFoto } from '../services/cloudinary'
 import { cargarParticipantes, invitarAmigo } from '../services/social'
+import { cargarComentarios, enviarComentario, eliminarComentario } from '../services/comentarios'
 import { supabase } from '../services/supabase'
 
 function CarruselFotos({ participantes }) {
@@ -102,6 +103,9 @@ function DetalleReto({ reto, onVolver, onActualizar }) {
   const [usernameInvitar, setUsernameInvitar] = useState('')
   const [mensajeInvitacion, setMensajeInvitacion] = useState(null)
   const [usuarioActual, setUsuarioActual] = useState(null)
+  const [usuarioActualId, setUsuarioActualId] = useState(null)
+  const [comentarios, setComentarios] = useState([])
+  const [nuevoComentario, setNuevoComentario] = useState('')
   const inputFotoRef = useRef(null)
 
   useEffect(() => {
@@ -111,8 +115,11 @@ function DetalleReto({ reto, onVolver, onActualizar }) {
   const cargarDatos = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     setUsuarioActual(user)
+    setUsuarioActualId(user.id)
     const data = await cargarParticipantes(reto.id)
     setParticipantes(data)
+    const coms = await cargarComentarios(reto.id)
+    setComentarios(coms)
 
     const miParticipacion = data.find(p => p.usuario_id === user?.id)
     if (miParticipacion?.foto_hoy) setFotoSubida(true)
@@ -156,12 +163,27 @@ function DetalleReto({ reto, onVolver, onActualizar }) {
     setTimeout(() => setMensajeInvitacion(null), 3000)
   }
 
+  const handleEnviarComentario = async () => {
+    if (!nuevoComentario.trim()) return
+    const resultado = await enviarComentario(reto.id, nuevoComentario)
+    if (!resultado.error) {
+      setNuevoComentario('')
+      const coms = await cargarComentarios(reto.id)
+      setComentarios(coms)
+    }
+  }
+
+  const handleEliminarComentario = async (comentarioId) => {
+    await eliminarComentario(comentarioId)
+    setComentarios(prev => prev.filter(c => c.id !== comentarioId))
+  }
+
   const progreso = Math.round((progresoActual / reto.dias) * 100)
   const circunferencia = 94
   const yaSubioFoto = fotoSubida || reto.foto_hoy
 
   return (
-    <div className="detalle-screen">
+    <div className="detalle-screen" style={{ animation: 'slideInRight 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
       <div className="detalle-header">
         <button className="btn-volver" onClick={onVolver}>
           <i className="ti ti-arrow-left"></i>
@@ -226,7 +248,7 @@ function DetalleReto({ reto, onVolver, onActualizar }) {
                   className="input-reto"
                   placeholder="@username"
                   value={usernameInvitar}
-                  onChange={e => setUsernameInvitar(e.target.value.toLowerCase().replace(/\s/g, ''))}
+                  onChange={e => setUsernameInvitar(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                   onKeyDown={e => { if (e.key === 'Enter') handleInvitar() }}
                 />
                 <button className="btn-añadir" onClick={handleInvitar}>
@@ -244,14 +266,14 @@ function DetalleReto({ reto, onVolver, onActualizar }) {
           <div className="participantes-lista">
             {participantes.map((p, i) => (
               <div key={i} className="participante-item">
-                <div className="participante-avatar">
-                  {p.perfiles?.nombre ? p.perfiles.nombre.charAt(0).toUpperCase() : '?'}
+                <div className="participante-avatar" style={{ overflow: 'hidden' }}>
+                  {p.perfiles?.avatar_url
+                    ? <img src={p.perfiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : p.perfiles?.nombre?.charAt(0).toUpperCase() || '?'
+                  }
                 </div>
                 <div style={{ flex: 1 }}>
                   <p className="participante-nombre">{p.perfiles?.nombre || p.perfiles?.username || 'Usuario'}</p>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {p.dias_completados || 0} días completados
-                  </p>
                 </div>
                 {p.foto_hoy
                   ? <i className="ti ti-circle-check" style={{ color: '#3B6D11', fontSize: '20px' }}></i>
@@ -259,6 +281,56 @@ function DetalleReto({ reto, onVolver, onActualizar }) {
                 }
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="detalle-seccion">
+          <p className="detalle-seccion-titulo">Comentarios</p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '240px', overflowY: 'auto', marginBottom: '12px' }}>
+            {comentarios.length === 0 ? (
+              <p className="guia-texto" style={{ fontSize: '13px' }}>Sé el primero en comentar</p>
+            ) : (
+              comentarios.map((c, i) => (
+                <div key={c.id} style={{ display: 'flex', gap: '8px', animation: `staggerIn 0.25s ease ${i * 0.03}s both` }}>
+                  <div className="participante-avatar" style={{ width: '28px', height: '28px', fontSize: '11px', flexShrink: 0, overflow: 'hidden' }}>
+                    {c.perfil?.avatar_url
+                      ? <img src={c.perfil.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : c.perfil?.nombre?.charAt(0).toUpperCase() || '?'
+                    }
+                  </div>
+                  <div style={{
+                    background: 'var(--bg-secondary)', borderRadius: '12px', padding: '8px 12px', flex: 1
+                  }}>
+                    <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                      {c.perfil?.nombre || c.perfil?.username}
+                    </p>
+                    <p style={{ fontSize: '13px', color: 'var(--text-primary)', marginTop: '2px' }}>{c.texto}</p>
+                  </div>
+                  {c.usuario_id === usuarioActualId && (
+                    <button
+                      onClick={() => handleEliminarComentario(c.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '14px', alignSelf: 'center' }}
+                    >
+                      <i className="ti ti-x"></i>
+                    </button>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              className="input-reto"
+              placeholder="Escribe un comentario..."
+              value={nuevoComentario}
+              onChange={e => setNuevoComentario(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleEnviarComentario() }}
+            />
+            <button className="btn-añadir" onClick={handleEnviarComentario}>
+              <i className="ti ti-send"></i>
+            </button>
           </div>
         </div>
 

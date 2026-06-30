@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
-import { cargarRetosPopulares, cargarRetosDeAmigos, pedirUnirseAReto } from '../services/descubrir'
+import { cargarRetosPopulares, cargarRetosDeAmigos, pedirUnirseAReto, cargarRetosDelMomento } from '../services/descubrir'
 
-function Descubrir({ usuario }) {
+function Descubrir({ usuario, onAñadirReto }) {
   const [tab, setTab] = useState('populares')
   const [populares, setPopulares] = useState([])
   const [deAmigos, setDeAmigos] = useState([])
+  const [retosIA, setRetosIA] = useState([])
   const [cargando, setCargando] = useState(true)
   const [solicitados, setSolicitados] = useState(new Set())
+  const [añadidos, setAñadidos] = useState(new Set())
   const [mensaje, setMensaje] = useState(null)
 
   useEffect(() => {
@@ -14,12 +16,14 @@ function Descubrir({ usuario }) {
   }, [])
 
   const cargarDatos = async () => {
-    const [pop, amig] = await Promise.all([
+    const [pop, amig, ia] = await Promise.all([
       cargarRetosPopulares(),
-      cargarRetosDeAmigos(usuario.id)
+      cargarRetosDeAmigos(usuario.id),
+      cargarRetosDelMomento()
     ])
     setPopulares(pop)
     setDeAmigos(amig)
+    setRetosIA(ia)
     setCargando(false)
   }
 
@@ -34,19 +38,26 @@ function Descubrir({ usuario }) {
     setTimeout(() => setMensaje(null), 2500)
   }
 
+  const handleAñadirRetoIA = (reto) => {
+    onAñadirReto({ emoji: reto.emoji, titulo: reto.titulo, dias: reto.dias })
+    setAñadidos(prev => new Set(prev).add(reto.id))
+    setMensaje({ tipo: 'ok', texto: 'Reto añadido a tu lista' })
+    setTimeout(() => setMensaje(null), 2500)
+  }
+
   if (cargando) return (
     <div style={{ padding: '20px' }}>
       <p className="guia-texto">Cargando...</p>
     </div>
   )
 
-  const listaActual = tab === 'populares' ? populares : deAmigos
+  const listaActual = tab === 'populares' ? populares : tab === 'amigos' ? deAmigos : retosIA
 
   return (
     <div style={{ paddingBottom: '20px' }}>
       <p className="guia-intro" style={{ marginBottom: '16px' }}>Descubrir</p>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <button
           className={`btn-dias ${tab === 'populares' ? 'btn-dias-activo' : ''}`}
           onClick={() => setTab('populares')}
@@ -59,11 +70,17 @@ function Descubrir({ usuario }) {
         >
           👥 De amigos
         </button>
+        <button
+          className={`btn-dias ${tab === 'ia' ? 'btn-dias-activo' : ''}`}
+          onClick={() => setTab('ia')}
+        >
+          ✨ Del momento
+        </button>
       </div>
 
       {mensaje && (
         <div style={{
-          background: mensaje.tipo === 'ok' ? 'var(--bg-secondary)' : 'var(--bg-secondary)',
+          background: 'var(--bg-secondary)',
           border: `0.5px solid ${mensaje.tipo === 'ok' ? '#3B6D11' : '#E24B4A'}`,
           borderRadius: '10px', padding: '8px 12px', marginBottom: '12px'
         }}>
@@ -79,7 +96,9 @@ function Descubrir({ usuario }) {
           borderRadius: '14px', padding: '24px', textAlign: 'center'
         }}>
           <p className="guia-texto" style={{ fontSize: '13px' }}>
-            {tab === 'populares' ? 'Aún no hay retos populares' : 'Tus amigos no tienen retos nuevos ahora mismo'}
+            {tab === 'populares' && 'Aún no hay retos populares'}
+            {tab === 'amigos' && 'Tus amigos no tienen retos públicos nuevos ahora mismo'}
+            {tab === 'ia' && 'Generando retos del momento...'}
           </p>
         </div>
       ) : (
@@ -98,20 +117,36 @@ function Descubrir({ usuario }) {
                     {reto.dias} días
                     {tab === 'populares' && reto.numParticipantes > 0 && ` · ${reto.numParticipantes} participantes`}
                     {tab === 'amigos' && reto.creador && ` · de @${reto.creador.username}`}
+                    {tab === 'ia' && ' · sugerido por IA'}
                   </p>
                 </div>
               </div>
-              <button
-                className="btn-principal"
-                style={{
-                  opacity: solicitados.has(reto.id) ? 0.5 : 1,
-                  cursor: solicitados.has(reto.id) ? 'not-allowed' : 'pointer'
-                }}
-                disabled={solicitados.has(reto.id)}
-                onClick={() => handlePedirUnirse(reto.id)}
-              >
-                {solicitados.has(reto.id) ? '✓ Solicitud enviada' : 'Pedir unirme'}
-              </button>
+
+              {tab === 'ia' ? (
+                <button
+                  className="btn-principal"
+                  style={{
+                    opacity: añadidos.has(reto.id) ? 0.5 : 1,
+                    cursor: añadidos.has(reto.id) ? 'not-allowed' : 'pointer'
+                  }}
+                  disabled={añadidos.has(reto.id)}
+                  onClick={() => handleAñadirRetoIA(reto)}
+                >
+                  {añadidos.has(reto.id) ? '✓ Añadido' : 'Añadir a mis retos'}
+                </button>
+              ) : (
+                <button
+                  className="btn-principal"
+                  style={{
+                    opacity: solicitados.has(reto.id) ? 0.5 : 1,
+                    cursor: solicitados.has(reto.id) ? 'not-allowed' : 'pointer'
+                  }}
+                  disabled={solicitados.has(reto.id)}
+                  onClick={() => handlePedirUnirse(reto.id)}
+                >
+                  {solicitados.has(reto.id) ? '✓ Solicitud enviada' : 'Pedir unirme'}
+                </button>
+              )}
             </div>
           ))}
         </div>

@@ -49,6 +49,7 @@ export async function guardarReto(usuarioId, reto) {
 
   return data
 }
+
 export async function eliminarReto(retoId) {
   const { error } = await supabase
     .from('retos')

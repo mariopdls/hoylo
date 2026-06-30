@@ -279,7 +279,7 @@ function App() {
                 <Home retos={retosUsuario} usuario={usuario} onNuevoReto={añadirReto} onEliminarReto={eliminarRetoUsuario} onActualizarReto={actualizarReto} />
               </PullToRefresh>
             )}
-            {paginaActiva === 'descubrir' && <Descubrir usuario={usuario} />}
+            {paginaActiva === 'descubrir' && <Descubrir usuario={usuario} onAñadirReto={añadirReto} />}
             {paginaActiva === 'amigos' && (
               <Amigos
                 usuario={usuario}

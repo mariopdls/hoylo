@@ -276,3 +276,16 @@ export async function rechazarSolicitudReto(solicitudId) {
     .update({ estado: 'rechazada' })
     .eq('id', solicitudId)
 }
+
+export async function buscarUsuarios(query) {
+  if (!query || query.length < 2) return []
+
+  const { data } = await supabase
+    .from('perfiles')
+    .select('id, nombre, username, avatar_url, perfil_publico')
+    .ilike('username', `%${query}%`)
+    .eq('perfil_publico', true)
+    .limit(8)
+
+  return data || []
+}

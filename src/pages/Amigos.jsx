@@ -5,7 +5,8 @@ import {
   cargarInvitacionesPendientes, aceptarInvitacion, rechazarInvitacion,
   enviarSolicitudAmistad, cargarSolicitudesPendientes,
   aceptarSolicitudAmistad, rechazarSolicitudAmistad, cargarAmigos,
-  cargarSolicitudesReto, aceptarSolicitudReto, rechazarSolicitudReto
+  cargarSolicitudesReto, aceptarSolicitudReto, rechazarSolicitudReto,
+  buscarUsuarios
 } from '../services/social'
 import PerfilAmigo from './PerfilAmigo'
 
@@ -19,6 +20,7 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
   const [cargando, setCargando] = useState(true)
   const [perfil, setPerfil] = useState(null)
   const [usernameSolicitar, setUsernameSolicitar] = useState('')
+  const [resultadosBusqueda, setResultadosBusqueda] = useState([])
   const [mensaje, setMensaje] = useState(null)
   const [amigoSeleccionado, setAmigoSeleccionado] = useState(null)
 
@@ -92,14 +94,24 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
     onRecargarNotificaciones?.()
   }
 
-  const handleEnviarSolicitud = async () => {
-    if (!usernameSolicitar.trim()) return
-    const resultado = await enviarSolicitudAmistad(usernameSolicitar.trim())
+  const handleBuscar = async (valor) => {
+    setUsernameSolicitar(valor)
+    if (valor.length >= 2) {
+      const resultados = await buscarUsuarios(valor)
+      setResultadosBusqueda(resultados.filter(r => r.id !== usuario.id))
+    } else {
+      setResultadosBusqueda([])
+    }
+  }
+
+  const handleSolicitarDesdeResultado = async (u) => {
+    const resultado = await enviarSolicitudAmistad(u.username)
     if (resultado.error) {
       setMensaje({ tipo: 'error', texto: resultado.error })
     } else {
       setMensaje({ tipo: 'ok', texto: 'Solicitud enviada' })
       setUsernameSolicitar('')
+      setResultadosBusqueda([])
     }
     setTimeout(() => setMensaje(null), 3000)
   }
@@ -154,8 +166,8 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
             <div>
               <p className="detalle-seccion-titulo" style={{ marginBottom: '10px' }}>Solicitudes de amistad</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {solicitudesAmistad.map(sol => (
-                  <div key={sol.id} className="config-fila" style={{ cursor: 'default' }}>
+                {solicitudesAmistad.map((sol, i) => (
+                  <div key={sol.id} className="config-fila" style={{ cursor: 'default', animation: `staggerIn 0.25s ease ${i * 0.04}s both` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div className="participante-avatar">
                         {sol.perfil?.nombre?.charAt(0).toUpperCase() || '?'}
@@ -189,10 +201,11 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
             <div>
               <p className="detalle-seccion-titulo" style={{ marginBottom: '10px' }}>Invitaciones a retos</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {invitacionesRetos.map(inv => (
+                {invitacionesRetos.map((inv, i) => (
                   <div key={inv.id} style={{
                     background: 'var(--bg-card)', border: '0.5px solid var(--border)',
-                    borderRadius: '14px', padding: '14px 16px'
+                    borderRadius: '14px', padding: '14px 16px',
+                    animation: `staggerIn 0.25s ease ${i * 0.04}s both`
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                       <span style={{ fontSize: '24px' }}>{inv.retos?.emoji}</span>
@@ -223,10 +236,11 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
             <div>
               <p className="detalle-seccion-titulo" style={{ marginBottom: '10px' }}>Quieren unirse a tus retos</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {solicitudesReto.map(sol => (
+                {solicitudesReto.map((sol, i) => (
                   <div key={sol.id} style={{
                     background: 'var(--bg-card)', border: '0.5px solid var(--border)',
-                    borderRadius: '14px', padding: '14px 16px'
+                    borderRadius: '14px', padding: '14px 16px',
+                    animation: `staggerIn 0.25s ease ${i * 0.04}s both`
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                       <span style={{ fontSize: '24px' }}>{sol.reto?.emoji}</span>
@@ -278,6 +292,7 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
               <div
                 key={i}
                 className="config-fila"
+                style={{ animation: `staggerIn 0.25s ease ${i * 0.04}s both` }}
                 onClick={() => setAmigoSeleccionado(amigo.id)}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -303,17 +318,49 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <p className="detalle-seccion-titulo" style={{ marginBottom: '8px' }}>Añadir amigo</p>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ position: 'relative' }}>
               <input
                 className="input-reto"
-                placeholder="@username"
+                placeholder="Busca por username..."
                 value={usernameSolicitar}
-                onChange={e => setUsernameSolicitar(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                onKeyDown={e => { if (e.key === 'Enter') handleEnviarSolicitud() }}
+                onChange={e => handleBuscar(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
               />
-              <button className="btn-añadir" onClick={handleEnviarSolicitud}>
-                <i className="ti ti-send"></i>
-              </button>
+              {resultadosBusqueda.length > 0 && (
+                <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {resultadosBusqueda.map((u, i) => (
+                    <div
+                      key={u.id}
+                      className="config-fila"
+                      style={{ cursor: 'default', animation: `staggerIn 0.25s ease ${i * 0.04}s both` }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div className="participante-avatar" style={{ overflow: 'hidden' }}>
+                          {u.avatar_url
+                            ? <img src={u.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : u.nombre?.charAt(0).toUpperCase()
+                          }
+                        </div>
+                        <div>
+                          <p className="reto-titulo">{u.nombre}</p>
+                          <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{u.username}</p>
+                        </div>
+                      </div>
+                      <button
+                        className="btn-añadir"
+                        style={{ width: '32px', height: '32px', fontSize: '14px' }}
+                        onClick={() => handleSolicitarDesdeResultado(u)}
+                      >
+                        <i className="ti ti-user-plus"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {usernameSolicitar.length >= 2 && resultadosBusqueda.length === 0 && (
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '6px', paddingLeft: '4px' }}>
+                  No se encontraron usuarios con ese nombre
+                </p>
+              )}
             </div>
             {mensaje && (
               <p style={{ fontSize: '12px', color: mensaje.tipo === 'ok' ? '#3B6D11' : '#E24B4A', marginTop: '6px', paddingLeft: '4px' }}>
