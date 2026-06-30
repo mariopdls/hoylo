@@ -9,10 +9,16 @@ function ModalNuevoReto({ onCerrar, onAñadir }) {
   const [emojiSeleccionado, setEmojiSeleccionado] = useState('⭐')
   const [diasSeleccionados, setDiasSeleccionados] = useState(7)
   const [mostrarEmojis, setMostrarEmojis] = useState(false)
+  const [esPublico, setEsPublico] = useState(false)
 
   const handleAñadir = () => {
     if (retoTexto.trim()) {
-      onAñadir({ emoji: emojiSeleccionado, titulo: retoTexto.trim(), dias: diasSeleccionados })
+      onAñadir({
+        emoji: emojiSeleccionado,
+        titulo: retoTexto.trim(),
+        dias: diasSeleccionados,
+        es_publico: esPublico
+      })
       onCerrar()
     }
   }
@@ -66,6 +72,19 @@ function ModalNuevoReto({ onCerrar, onAñadir }) {
               {d}d
             </button>
           ))}
+        </div>
+
+        <div className="config-fila" onClick={() => setEsPublico(v => !v)} style={{ marginTop: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <i className="ti ti-world" style={{ fontSize: '18px', color: 'var(--accent)' }}></i>
+            <div>
+              <p className="reto-titulo" style={{ fontSize: '13px' }}>Reto público</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                {esPublico ? 'Otros pueden encontrarlo y pedir unirse' : 'Solo visible para ti y tus invitados'}
+              </p>
+            </div>
+          </div>
+          <div className={`toggle ${esPublico ? 'toggle-activo' : ''}`}></div>
         </div>
 
         <button

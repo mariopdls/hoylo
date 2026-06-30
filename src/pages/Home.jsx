@@ -4,7 +4,7 @@ import ModalNuevoReto from '../components/ModalNuevoReto'
 import ModalEliminarReto from '../components/ModalEliminarReto'
 import DetalleReto from './DetalleReto'
 
-function RetoCard({ reto, onEliminar, onAbrir }) {
+function RetoCard({ reto, onEliminar, onAbrir, esAdmin }) {
   const [offsetX, setOffsetX] = useState(0)
   const startX = useRef(null)
   const isDragging = useRef(false)
@@ -13,17 +13,22 @@ function RetoCard({ reto, onEliminar, onAbrir }) {
   const UMBRAL = 80
 
   const onTouchStart = (e) => {
+    if (!esAdmin) return
     startX.current = e.touches[0].clientX
     isDragging.current = true
   }
 
   const onTouchMove = (e) => {
-    if (!isDragging.current) return
+    if (!esAdmin || !isDragging.current) return
     const diff = e.touches[0].clientX - startX.current
     if (diff < 0) setOffsetX(Math.max(diff, -120))
   }
 
   const onTouchEnd = () => {
+    if (!esAdmin) {
+      onAbrir()
+      return
+    }
     isDragging.current = false
     if (offsetX < -UMBRAL) {
       onEliminar()
@@ -33,19 +38,19 @@ function RetoCard({ reto, onEliminar, onAbrir }) {
     setOffsetX(0)
   }
 
-  const progreso = Math.round(((reto.dias_completados || 0) / reto.dias) * 100)
-
   return (
     <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', marginBottom: '10px' }}>
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: '#E24B4A',
-        display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-        paddingRight: '20px',
-        borderRadius: '14px'
-      }}>
-        <i className="ti ti-trash" style={{ color: 'white', fontSize: '22px' }}></i>
-      </div>
+      {esAdmin && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: '#E24B4A',
+          display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+          paddingRight: '20px',
+          borderRadius: '14px'
+        }}>
+          <i className="ti ti-trash" style={{ color: 'white', fontSize: '22px' }}></i>
+        </div>
+      )}
 
       <div
         className="reto-card reto-card-home"
@@ -72,7 +77,7 @@ function RetoCard({ reto, onEliminar, onAbrir }) {
               transform="rotate(-90 18 18)"
             />
             <text x="18" y="22" textAnchor="middle" fontSize="10" fill="#BA7517">
-              {progreso}%
+              {Math.round(((reto.dias_completados || 0) / reto.dias) * 100)}%
             </text>
           </svg>
         </div>
@@ -81,7 +86,7 @@ function RetoCard({ reto, onEliminar, onAbrir }) {
   )
 }
 
-function Home({ retos, onNuevoReto, onEliminarReto, onActualizarReto }) {
+function Home({ retos, usuario, onNuevoReto, onEliminarReto, onActualizarReto }) {
   const { t } = useTranslation()
   const [modalAbierto, setModalAbierto] = useState(false)
   const [retoAEliminar, setRetoAEliminar] = useState(null)
@@ -110,6 +115,7 @@ function Home({ retos, onNuevoReto, onEliminarReto, onActualizarReto }) {
           <RetoCard
             key={reto.id || i}
             reto={reto}
+            esAdmin={reto.usuario_id === usuario?.id}
             onEliminar={() => setRetoAEliminar(reto)}
             onAbrir={() => setRetoDetalle(i)}
           />

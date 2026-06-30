@@ -16,6 +16,7 @@ function PasoRetos({ respuestas, onFin, onBack }) {
   const [mostrarEmojis, setMostrarEmojis] = useState(false)
   const [retosPersonalizados, setRetosPersonalizados] = useState([])
   const [retosSeleccionados, setRetosSeleccionados] = useState([])
+  const [esPublico, setEsPublico] = useState(false)
 
   useEffect(() => {
     generarRetos(respuestas, i18n.language)

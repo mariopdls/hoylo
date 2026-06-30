@@ -4,7 +4,8 @@ import { supabase } from '../services/supabase'
 import {
   cargarInvitacionesPendientes, aceptarInvitacion, rechazarInvitacion,
   enviarSolicitudAmistad, cargarSolicitudesPendientes,
-  aceptarSolicitudAmistad, rechazarSolicitudAmistad, cargarAmigos
+  aceptarSolicitudAmistad, rechazarSolicitudAmistad, cargarAmigos,
+  cargarSolicitudesReto, aceptarSolicitudReto, rechazarSolicitudReto
 } from '../services/social'
 import PerfilAmigo from './PerfilAmigo'
 
@@ -13,6 +14,7 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
   const [tab, setTab] = useState('solicitudes')
   const [invitacionesRetos, setInvitacionesRetos] = useState([])
   const [solicitudesAmistad, setSolicitudesAmistad] = useState([])
+  const [solicitudesReto, setSolicitudesReto] = useState([])
   const [amigos, setAmigos] = useState([])
   const [cargando, setCargando] = useState(true)
   const [perfil, setPerfil] = useState(null)
@@ -40,6 +42,9 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
 
     const sols = await cargarSolicitudesPendientes()
     setSolicitudesAmistad(sols)
+
+    const solReto = await cargarSolicitudesReto()
+    setSolicitudesReto(solReto)
 
     const amigosLista = await cargarAmigos()
     setAmigos(amigosLista)
@@ -74,6 +79,19 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
     onRecargarNotificaciones?.()
   }
 
+  const handleAceptarSolicitudReto = async (sol) => {
+    await aceptarSolicitudReto(sol.id, sol.reto_id, sol.usuario_id)
+    setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
+    onRecargarRetos()
+    onRecargarNotificaciones?.()
+  }
+
+  const handleRechazarSolicitudReto = async (sol) => {
+    await rechazarSolicitudReto(sol.id)
+    setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
+    onRecargarNotificaciones?.()
+  }
+
   const handleEnviarSolicitud = async () => {
     if (!usernameSolicitar.trim()) return
     const resultado = await enviarSolicitudAmistad(usernameSolicitar.trim())
@@ -86,7 +104,7 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
     setTimeout(() => setMensaje(null), 3000)
   }
 
-  const totalPendientes = invitacionesRetos.length + solicitudesAmistad.length
+  const totalPendientes = invitacionesRetos.length + solicitudesAmistad.length + solicitudesReto.length
 
   if (amigoSeleccionado) {
     return (
@@ -193,6 +211,40 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
                       </button>
                       <button className="btn-principal" onClick={() => handleAceptarReto(inv)}>
                         Unirme
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {solicitudesReto.length > 0 && (
+            <div>
+              <p className="detalle-seccion-titulo" style={{ marginBottom: '10px' }}>Quieren unirse a tus retos</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {solicitudesReto.map(sol => (
+                  <div key={sol.id} style={{
+                    background: 'var(--bg-card)', border: '0.5px solid var(--border)',
+                    borderRadius: '14px', padding: '14px 16px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '24px' }}>{sol.reto?.emoji}</span>
+                      <div style={{ flex: 1 }}>
+                        <p className="reto-titulo">{sol.reto?.titulo}</p>
+                        <p className="reto-dias">@{sol.perfil?.username} quiere unirse</p>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        className="btn-principal"
+                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '0.5px solid var(--border)' }}
+                        onClick={() => handleRechazarSolicitudReto(sol)}
+                      >
+                        Rechazar
+                      </button>
+                      <button className="btn-principal" onClick={() => handleAceptarSolicitudReto(sol)}>
+                        Aceptar
                       </button>
                     </div>
                   </div>

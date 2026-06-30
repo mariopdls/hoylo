@@ -28,7 +28,8 @@ export async function guardarReto(usuarioId, reto) {
       emoji: reto.emoji,
       titulo: reto.titulo,
       dias: reto.dias,
-      dia_actual: 1
+      dia_actual: 1,
+      es_publico: reto.es_publico || false
     })
     .select()
     .single()
@@ -48,7 +49,6 @@ export async function guardarReto(usuarioId, reto) {
 
   return data
 }
-
 export async function eliminarReto(retoId) {
   const { error } = await supabase
     .from('retos')
@@ -95,4 +95,58 @@ export async function resetearFotosDia() {
     .eq('foto_hoy', true)
 
   if (error) console.error('Error reseteando fotos:', error)
+}
+
+export async function cargarSolicitudesReto() {
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data } = await supabase
+    .from('solicitudes_reto')
+    .select('id, reto_id, usuario_id, estado')
+    .eq('para_admin_id', user.id)
+    .eq('estado', 'pendiente')
+
+  if (!data) return []
+
+  const conDatos = await Promise.all(
+    data.map(async (s) => {
+      const { data: reto } = await supabase
+        .from('retos')
+        .select('titulo, emoji, dias')
+        .eq('id', s.reto_id)
+        .maybeSingle()
+
+      const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('nombre, username')
+        .eq('id', s.usuario_id)
+        .maybeSingle()
+
+      return { ...s, reto, perfil }
+    })
+  )
+
+  return conDatos
+}
+
+export async function aceptarSolicitudReto(solicitudId, retoId, usuarioId) {
+  await supabase
+    .from('participantes_reto')
+    .insert({
+      reto_id: retoId,
+      usuario_id: usuarioId,
+      rol: 'participante'
+    })
+
+  await supabase
+    .from('solicitudes_reto')
+    .update({ estado: 'aceptada' })
+    .eq('id', solicitudId)
+}
+
+export async function rechazarSolicitudReto(solicitudId) {
+  await supabase
+    .from('solicitudes_reto')
+    .update({ estado: 'rechazada' })
+    .eq('id', solicitudId)
 }

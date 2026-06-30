@@ -13,6 +13,7 @@ import PasoRetos from './pages/onboarding/PasoRetos'
 import Home from './pages/Home'
 import Perfil from './pages/Perfil'
 import Amigos from './pages/Amigos'
+import Descubrir from './pages/Descubrir'
 import Cargando from './components/Cargando'
 import ModalConfig from './components/ModalConfig'
 import PullToRefresh from './components/PullToRefresh'
@@ -56,7 +57,13 @@ function App() {
       .eq('para_username', perfilData.username)
       .eq('estado', 'pendiente')
 
-    setNotificacionesPendientes((countSolicitudes || 0) + (countInvitaciones || 0))
+    const { count: countSolicitudesReto } = await supabase
+      .from('solicitudes_reto')
+      .select('id', { count: 'exact', head: true })
+      .eq('para_admin_id', user.id)
+      .eq('estado', 'pendiente')
+
+    setNotificacionesPendientes((countSolicitudes || 0) + (countInvitaciones || 0) + (countSolicitudesReto || 0))
   }
 
   const cargarPerfilYRetos = async (user) => {
@@ -269,10 +276,10 @@ function App() {
                 setRetosUsuario(retos)
                 await cargarNotificacionesPendientes(usuario)
               }}>
-                <Home retos={retosUsuario} onNuevoReto={añadirReto} onEliminarReto={eliminarRetoUsuario} onActualizarReto={actualizarReto} />
+                <Home retos={retosUsuario} usuario={usuario} onNuevoReto={añadirReto} onEliminarReto={eliminarRetoUsuario} onActualizarReto={actualizarReto} />
               </PullToRefresh>
             )}
-            {paginaActiva === 'descubrir' && <div>Descubrir</div>}
+            {paginaActiva === 'descubrir' && <Descubrir usuario={usuario} />}
             {paginaActiva === 'amigos' && (
               <Amigos
                 usuario={usuario}
