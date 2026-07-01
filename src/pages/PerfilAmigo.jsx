@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { cargarPerfilPublico, contarRetosCompletados } from '../services/perfilesPublicos'
+import { cargarPerfilPublico, contarRetosCompletados, cargarRetosPublicosActivos } from '../services/perfilesPublicos'
 import { cargarAmigosenComun, invitarAmigo } from '../services/social'
 
 function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
   const { t } = useTranslation()
   const [perfil, setPerfil] = useState(null)
   const [retosCount, setRetosCount] = useState(0)
+  const [retosActivos, setRetosActivos] = useState([])
   const [amigosEnComun, setAmigosEnComun] = useState([])
   const [cargando, setCargando] = useState(true)
   const [mostrarInvitar, setMostrarInvitar] = useState(false)
@@ -16,13 +17,15 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
   useEffect(() => { cargarDatos() }, [])
 
   const cargarDatos = async () => {
-    const [data, count, enComun] = await Promise.all([
+    const [data, count, activos, enComun] = await Promise.all([
       cargarPerfilPublico(amigoId),
       contarRetosCompletados(amigoId),
+      cargarRetosPublicosActivos(amigoId),
       cargarAmigosenComun(amigoId)
     ])
     setPerfil(data)
     setRetosCount(count)
+    setRetosActivos(activos)
     setAmigosEnComun(enComun)
     setCargando(false)
   }
@@ -39,7 +42,6 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
       <div style={{ width: '100%', maxWidth: '420px', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', animation: 'slideInRight 0.28s ease-out', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <button className="btn-volver" onClick={onVolver}><i className="ti ti-arrow-left"></i></button>
-          <div style={{ width: '38px' }} />
         </div>
         {children}
       </div>
@@ -63,6 +65,8 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
     </Wrapper>
   )
 
+  const circunferencia = 94
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', justifyContent: 'center', background: 'var(--bg-primary)' }}>
       <div style={{ width: '100%', maxWidth: '420px', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', animation: 'slideInRight 0.28s ease-out', overflow: 'hidden' }}>
@@ -80,16 +84,16 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
           </button>
         </div>
 
-        {/* Panel de invitar */}
+        {/* Panel invitar */}
         {mostrarInvitar && (
           <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', flexShrink: 0 }}>
-            {retosUsuario?.length === 0 ? (
+            {!retosUsuario?.length ? (
               <p className="guia-texto" style={{ fontSize: '13px' }}>No tienes retos activos</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <p className="detalle-seccion-titulo" style={{ marginBottom: '4px' }}>¿A cuál reto invitar?</p>
-                {retosUsuario?.map(reto => (
-                  <div key={reto.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between' }}>
+                {retosUsuario.map(reto => (
+                  <div key={reto.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '20px' }}>{reto.emoji}</span>
                       <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{reto.titulo}</p>
@@ -100,7 +104,7 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
                         fontSize: '11px',
                         background: invitados.has(reto.id) ? 'var(--bg-secondary)' : 'var(--accent)',
                         color: invitados.has(reto.id) ? 'var(--text-secondary)' : 'white',
-                        border: 'none'
+                        border: 'none', flexShrink: 0
                       }}
                       disabled={invitados.has(reto.id) || invitando === reto.id}
                       onClick={() => handleInvitar(reto.id)}
@@ -117,7 +121,7 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
         {/* Contenido scrollable */}
         <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-          {/* Avatar + nombre */}
+          {/* Avatar + nombre + bio */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
             <div style={{
               width: '90px', height: '90px', borderRadius: '50%',
@@ -135,8 +139,6 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
               <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>{perfil.nombre}</h2>
               <p className="reto-dias">@{perfil.username}</p>
             </div>
-
-            {/* Bio */}
             {perfil.bio && (
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center', maxWidth: '280px', lineHeight: '1.5' }}>
                 "{perfil.bio}"
@@ -144,7 +146,7 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
             )}
           </div>
 
-          {/* Stats — retos + rachas */}
+          {/* Stats */}
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center', boxShadow: 'var(--shadow-xs)', minWidth: '80px' }}>
               <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>{retosCount}</p>
@@ -182,6 +184,36 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
                     <p style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '600' }}>{a.nombre}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Retos públicos activos */}
+          {retosActivos.length > 0 && (
+            <div>
+              <p className="detalle-seccion-titulo" style={{ marginBottom: '10px' }}>Retos activos</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {retosActivos.map((reto, i) => {
+                  const progreso = Math.round((reto.dias_completados / reto.dias) * 100)
+                  const dash = Math.round((progreso / 100) * circunferencia)
+                  return (
+                    <div key={reto.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: 'var(--shadow-xs)', animation: `staggerIn 0.25s ease ${i * 0.05}s both` }}>
+                      <span style={{ fontSize: '28px' }}>{reto.emoji}</span>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{reto.titulo}</p>
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Día {reto.dias_completados} de {reto.dias}</p>
+                      </div>
+                      <svg width="40" height="40" viewBox="0 0 36 36" style={{ flexShrink: 0 }}>
+                        <circle cx="18" cy="18" r="15" fill="none" stroke="var(--border)" strokeWidth="3"/>
+                        <circle cx="18" cy="18" r="15" fill="none" stroke="var(--accent)" strokeWidth="3"
+                          strokeDasharray={`${dash} ${circunferencia}`}
+                          strokeLinecap="round" transform="rotate(-90 18 18)"
+                        />
+                        <text x="18" y="21" textAnchor="middle" fontSize="8" fill="var(--text-muted)">{progreso}%</text>
+                      </svg>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
