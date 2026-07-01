@@ -177,7 +177,7 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark 
 
           <p className="detalle-seccion-titulo" style={{ marginTop: '12px' }}>{t('config.sobre')}</p>
 
-          <div className="config-fila">
+          <div className="config-fila" onClick={(e) => { e.stopPropagation(); console.log('toggle dark'); onToggleDark() }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <i className="ti ti-info-circle" style={{ fontSize: '20px', color: 'var(--accent)' }}></i>
               <p className="reto-titulo">{t('config.version')}</p>

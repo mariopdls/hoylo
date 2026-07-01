@@ -31,7 +31,9 @@ function App() {
   const [respuestas, setRespuestas] = useState({})
   const [retosUsuario, setRetosUsuario] = useState([])
   const [paginaActiva, setPaginaActiva] = useState('inicio')
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('darkMode') === 'true'
+  })
   const [idioma, setIdioma] = useState('es')
   const [modalConfig, setModalConfig] = useState(false)
   const [mostrarTagline, setMostrarTagline] = useState(false)
@@ -39,6 +41,10 @@ function App() {
   const [desvaneciendo, setDesvaneciendo] = useState(false)
   const [notificacionesPendientes, setNotificacionesPendientes] = useState(0)
   const [toast, setToast] = useState(null)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+  }, [])
 
   const mostrarToast = (texto, tipo = 'ok') => {
     setToast({ texto, tipo })
@@ -101,7 +107,7 @@ function App() {
     const perfilData = respuestas.perfil || {}
     const aficiones = respuestas.aficiones || []
     await new Promise(resolve => setTimeout(resolve, 1000))
-    const { error } = await supabase
+    await supabase
       .from('perfiles')
       .upsert({
         id: usuario.id,
@@ -154,12 +160,12 @@ function App() {
   const guardarRespuesta = (clave, valor) => setRespuestas(r => ({ ...r, [clave]: valor }))
 
   const añadirReto = async (reto) => {
-  const retoGuardado = await guardarReto(usuario.id, reto)
-  if (retoGuardado) {
-    setRetosUsuario(prev => [...prev, retoGuardado])
-    mostrarToast(t('toast.retoAñadido'))
+    const retoGuardado = await guardarReto(usuario.id, reto)
+    if (retoGuardado) {
+      setRetosUsuario(prev => [...prev, retoGuardado])
+      mostrarToast(t('toast.retoAñadido'))
+    }
   }
-}
 
   const eliminarRetoUsuario = async (retoId) => {
     await eliminarReto(retoId)
@@ -172,9 +178,12 @@ function App() {
   }
 
   const toggleDark = () => {
-    setDarkMode(d => !d)
-    document.documentElement.setAttribute('data-theme', darkMode ? 'light' : 'dark')
-  }
+  const nuevo = !darkMode
+  console.log('toggleDark llamado, nuevo valor:', nuevo)
+  setDarkMode(nuevo)
+  localStorage.setItem('darkMode', String(nuevo))
+  document.documentElement.setAttribute('data-theme', nuevo ? 'dark' : 'light')
+}
 
   const toggleIdioma = () => {
     const nuevo = idioma === 'es' ? 'en' : 'es'
@@ -297,17 +306,17 @@ function App() {
               />
             )}
             {paginaActiva === 'amigos' && (
-            <Amigos
-              usuario={usuario}
-              retosUsuario={retosUsuario}
-              onRecargarRetos={async () => {
-                const retos = await cargarRetos(usuario.id)
-                setRetosUsuario(retos)
-              }}
-              onRecargarNotificaciones={() => cargarNotificacionesPendientes(usuario)}
-              onToast={mostrarToast}
-            />
-          )}
+              <Amigos
+                usuario={usuario}
+                retosUsuario={retosUsuario}
+                onRecargarRetos={async () => {
+                  const retos = await cargarRetos(usuario.id)
+                  setRetosUsuario(retos)
+                }}
+                onRecargarNotificaciones={() => cargarNotificacionesPendientes(usuario)}
+                onToast={mostrarToast}
+              />
+            )}
             {paginaActiva === 'perfil' && (
               <Perfil
                 usuario={usuario}
