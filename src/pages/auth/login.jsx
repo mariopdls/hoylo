@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../services/supabase'
 import logo from '../../assets/logo3.png'
@@ -10,6 +10,15 @@ function Login({ onLogin }) {
   const [esRegistro, setEsRegistro] = useState(false)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        onLogin(session.user)
+      }
+    })
+    return () => listener.subscription.unsubscribe()
+  }, [])
 
   const mensajeError = (msg) => {
     if (msg.includes('already registered')) return 'Este correo ya tiene una cuenta. Inicia sesión.'
@@ -29,22 +38,12 @@ function Login({ onLogin }) {
     if (esRegistro) {
       const { data, error } = await supabase.auth.signUp({ email, password })
       setCargando(false)
-
-      if (error) {
-        setError(mensajeError(error.message))
-        return
-      }
-
+      if (error) { setError(mensajeError(error.message)); return }
       onLogin(data.user)
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       setCargando(false)
-
-      if (error) {
-        setError(mensajeError(error.message))
-        return
-      }
-
+      if (error) { setError(mensajeError(error.message)); return }
       onLogin(data.user)
     }
   }
@@ -53,10 +52,10 @@ function Login({ onLogin }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo: 'com.hoylo.app://login'
       }
     })
-    if (error) setError('Error al iniciar sesión con Google')
+    if (error) console.error('Error Google login:', error)
   }
 
   return (
