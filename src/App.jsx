@@ -109,7 +109,6 @@ function App() {
         aficiones,
         idioma: idiomaActual
       }, { onConflict: 'id' })
-    console.log('Error Supabase:', error)
   }
 
   useEffect(() => {

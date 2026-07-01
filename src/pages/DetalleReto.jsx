@@ -81,6 +81,8 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
   const [usuarioActualId, setUsuarioActualId] = useState(null)
   const [comentarios, setComentarios] = useState([])
   const [nuevoComentario, setNuevoComentario] = useState('')
+  const [enviando, setEnviando] = useState(false)
+
   const inputFotoRef = useRef(null)
 
   useEffect(() => {
@@ -234,7 +236,9 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
           {mostrarInvitar && (
             <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
               <input className="input-reto" placeholder="@username" value={usernameInvitar} onChange={e => setUsernameInvitar(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} onKeyDown={e => { if (e.key === 'Enter') handleInvitar() }} />
-              <button className="btn-añadir" onClick={handleInvitar}><i className="ti ti-send"></i></button>
+              <button className="btn-añadir" onClick={handleEnviarComentario} disabled={enviando}>
+              <i className={`ti ${enviando ? 'ti-loader' : 'ti-send'}`}></i>
+             </button>
             </div>
           )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
