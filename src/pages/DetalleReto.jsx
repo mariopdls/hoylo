@@ -351,15 +351,18 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
 
       {/* Footer fijo — comentario + foto */}
       <div style={{
-        padding: '10px 20px',
-        paddingBottom: 'calc(100px + env(safe-area-inset-bottom))',
-        borderTop: '1px solid var(--border)',
-        background: 'var(--bg-primary)',
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px'
-      }}>
+      padding: '10px 20px',
+      paddingBottom: 'calc(120px + env(safe-area-inset-bottom))',
+      borderTop: '1px solid var(--border)',
+      background: 'var(--bg-primary)',
+      flexShrink: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      position: 'sticky',
+      bottom: 0,
+      zIndex: 10
+    }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           <input
             className="input-reto"
