@@ -1,3 +1,5 @@
+const GROQ_ENDPOINT = '/api/groq'
+
 export async function generarRetos(respuestas, idioma = 'es') {
   const { racha, mejorar, constancia } = respuestas
 
@@ -45,16 +47,11 @@ Exact format:
   { "emoji": "📵", "titulo": "No phone when waking up", "dias": 7 }
 ]`
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const response = await fetch(GROQ_ENDPOINT, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 500
+      messages: [{ role: 'user', content: prompt }]
     })
   })
 
@@ -82,16 +79,11 @@ Each one must have: short title, representative emoji, and duration in days (7, 
 Reply ONLY with a valid JSON array, no extra text, no markdown.
 Format: [{ "emoji": "🌻", "titulo": "Take care of a plant daily", "dias": 21 }]`
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const response = await fetch(GROQ_ENDPOINT, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 500
+      messages: [{ role: 'user', content: prompt }]
     })
   })
 
