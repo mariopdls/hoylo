@@ -1,4 +1,6 @@
-const GROQ_ENDPOINT = '/api/groq'
+const GROQ_ENDPOINT = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api/groq`
+  : '/api/groq'
 
 export async function generarRetos(respuestas, idioma = 'es') {
   const { racha, mejorar, constancia } = respuestas
