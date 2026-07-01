@@ -35,7 +35,6 @@ function CarruselFotos({ participantes }) {
         height: '220px',
         borderRadius: '14px',
         overflow: 'hidden',
-        marginBottom: '12px',
         backgroundColor: 'var(--bg-secondary)',
         flexShrink: 0
       }}
@@ -111,7 +110,6 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
   const [participantes, setParticipantes] = useState([])
   const [mostrarInvitar, setMostrarInvitar] = useState(false)
   const [usernameInvitar, setUsernameInvitar] = useState('')
-  const [usuarioActual, setUsuarioActual] = useState(null)
   const [usuarioActualId, setUsuarioActualId] = useState(null)
   const [comentarios, setComentarios] = useState([])
   const [nuevoComentario, setNuevoComentario] = useState('')
@@ -125,7 +123,6 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
 
   const cargarDatos = async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    setUsuarioActual(user)
     setUsuarioActualId(user.id)
     const data = await cargarParticipantes(reto.id)
     setParticipantes(data)
@@ -142,7 +139,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
     onActualizar({ ...reto, titulo })
   }
 
-    const handleFoto = async (e) => {
+  const handleFoto = async (e) => {
     const archivo = e.target.files[0]
     if (!archivo) return
     setSubiendo(true)
@@ -224,8 +221,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
       {/* Contenido scrollable */}
       <div style={{
         flex: 1, overflowY: 'auto', overflowX: 'hidden',
-        padding: '24px 20px',
-        paddingBottom: '12px',
+        padding: '24px 20px 12px',
         display: 'flex', flexDirection: 'column',
         gap: '24px', WebkitOverflowScrolling: 'touch'
       }}>
@@ -282,19 +278,17 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
           </div>
 
           {mostrarInvitar && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  className="input-reto"
-                  placeholder="@username"
-                  value={usernameInvitar}
-                  onChange={e => setUsernameInvitar(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                  onKeyDown={e => { if (e.key === 'Enter') handleInvitar() }}
-                />
-                <button className="btn-añadir" onClick={handleInvitar}>
-                  <i className="ti ti-send"></i>
-                </button>
-              </div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <input
+                className="input-reto"
+                placeholder="@username"
+                value={usernameInvitar}
+                onChange={e => setUsernameInvitar(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                onKeyDown={e => { if (e.key === 'Enter') handleInvitar() }}
+              />
+              <button className="btn-añadir" onClick={handleInvitar}>
+                <i className="ti ti-send"></i>
+              </button>
             </div>
           )}
 
@@ -319,12 +313,12 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
           </div>
         </div>
 
-        {/* Comentarios */}
+        {/* Comentarios — solo la lista, sin el input */}
         <div>
-          <p className="detalle-seccion-titulo">Comentarios</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px' }}>
+          <p className="detalle-seccion-titulo">{t('detalle.comentarios')}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {comentarios.length === 0 ? (
-              <p className="guia-texto" style={{ fontSize: '13px' }}>Sé el primero en comentar</p>
+              <p className="guia-texto" style={{ fontSize: '13px' }}>{t('detalle.primerComentario')}</p>
             ) : (
               comentarios.map((c, i) => (
                 <div key={c.id} style={{ display: 'flex', gap: '8px', animation: `staggerIn 0.25s ease ${i * 0.03}s both` }}>
@@ -352,29 +346,33 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
               ))
             )}
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input
-              className="input-reto"
-              placeholder="Escribe un comentario..."
-              value={nuevoComentario}
-              onChange={e => setNuevoComentario(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleEnviarComentario() }}
-            />
-            <button className="btn-añadir" onClick={handleEnviarComentario}>
-              <i className="ti ti-send"></i>
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Footer fijo con botón de foto */}
+      {/* Footer fijo — comentario + foto */}
       <div style={{
-      padding: '12px 20px',
-      paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
-      borderTop: '1px solid var(--border)',
-      background: 'var(--bg-primary)',
-      flexShrink: 0
-    }}>
+        padding: '10px 20px',
+        paddingBottom: 'calc(100px + env(safe-area-inset-bottom))',
+        borderTop: '1px solid var(--border)',
+        background: 'var(--bg-primary)',
+        flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px'
+      }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input
+            className="input-reto"
+            placeholder={t('detalle.placeholderComentario')}
+            value={nuevoComentario}
+            onChange={e => setNuevoComentario(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleEnviarComentario() }}
+          />
+          <button className="btn-añadir" onClick={handleEnviarComentario}>
+            <i className="ti ti-send"></i>
+          </button>
+        </div>
+
         <input
           type="file"
           accept="image/*"
