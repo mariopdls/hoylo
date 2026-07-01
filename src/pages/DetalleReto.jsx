@@ -9,13 +9,11 @@ import { supabase } from '../services/supabase'
 function CarruselFotos({ participantes }) {
   const [indice, setIndice] = useState(0)
   const startX = useRef(null)
-  const containerRef = useRef(null)
 
   const conFoto = participantes.filter(p => p.foto_url)
   if (conFoto.length === 0) return null
 
   const onTouchStart = (e) => { startX.current = e.touches[0].clientX }
-
   const onTouchEnd = (e) => {
     if (!startX.current) return
     const diff = startX.current - e.changedTouches[0].clientX
@@ -26,46 +24,26 @@ function CarruselFotos({ participantes }) {
 
   return (
     <div
-      ref={containerRef}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       style={{
-        position: 'relative',
-        width: '100%',
-        height: '220px',
-        borderRadius: '14px',
-        overflow: 'hidden',
-        backgroundColor: 'var(--bg-secondary)',
-        flexShrink: 0
+        position: 'relative', width: '100%', height: '220px',
+        borderRadius: '14px', overflow: 'hidden',
+        backgroundColor: 'var(--bg-secondary)', flexShrink: 0
       }}
     >
       <div style={{
-        display: 'flex',
-        width: '100%',
-        height: '100%',
+        display: 'flex', width: '100%', height: '100%',
         transform: `translateX(-${indice * 100}%)`,
         transition: 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
         willChange: 'transform'
       }}>
         {conFoto.map((p, i) => (
           <div key={i} style={{ width: '100%', height: '100%', minWidth: '100%', flexShrink: 0, position: 'relative' }}>
-            <img
-              src={p.foto_url}
-              alt="foto"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
-            />
-            <div style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0,
-              background: 'linear-gradient(transparent, rgba(0,0,0,0.55))',
-              padding: '24px 14px 12px'
-            }}>
+            <img src={p.foto_url} alt="foto" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.55))', padding: '24px 14px 12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: '26px', height: '26px', borderRadius: '50%',
-                  background: 'var(--accent)', display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', fontSize: '11px', color: 'white', fontWeight: '700',
-                  flexShrink: 0, overflow: 'hidden'
-                }}>
+                <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'white', fontWeight: '700', flexShrink: 0, overflow: 'hidden' }}>
                   {p.perfiles?.avatar_url
                     ? <img src={p.perfiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : p.perfiles?.nombre?.charAt(0).toUpperCase() || '?'
@@ -79,20 +57,10 @@ function CarruselFotos({ participantes }) {
           </div>
         ))}
       </div>
-
       {conFoto.length > 1 && (
         <div style={{ position: 'absolute', bottom: '10px', right: '12px', display: 'flex', gap: '4px' }}>
           {conFoto.map((_, i) => (
-            <div
-              key={i}
-              onClick={() => setIndice(i)}
-              style={{
-                width: i === indice ? '16px' : '6px', height: '6px',
-                borderRadius: '3px', background: 'white',
-                opacity: i === indice ? 1 : 0.5,
-                transition: 'all 0.3s ease', cursor: 'pointer'
-              }}
-            />
+            <div key={i} onClick={() => setIndice(i)} style={{ width: i === indice ? '16px' : '6px', height: '6px', borderRadius: '3px', background: 'white', opacity: i === indice ? 1 : 0.5, transition: 'all 0.3s ease', cursor: 'pointer' }} />
           ))}
         </div>
       )}
@@ -162,10 +130,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
     if (!usernameInvitar.trim()) return
     const resultado = await invitarAmigo(reto.id, usernameInvitar.trim())
     onToast?.(resultado.error || t('toast.invitacionEnviada'), resultado.error ? 'error' : 'ok')
-    if (!resultado.error) {
-      setUsernameInvitar('')
-      setMostrarInvitar(false)
-    }
+    if (!resultado.error) { setUsernameInvitar(''); setMostrarInvitar(false) }
   }
 
   const handleEnviarComentario = async () => {
@@ -190,16 +155,19 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
   const yaSubioFoto = fotoSubida || reto.foto_hoy
 
   return (
+    
+  <div style={{
+    position: 'fixed',
+    inset: 0,
+    zIndex: 9999,
+    display: 'flex',
+    justifyContent: 'center',
+    background: 'rgba(0,0,0,0.3)'
+  }}>
     <div style={{
-      position: 'fixed',
-      top: 0,
-      left: '50%',
-      transform: 'translateX(-50%)',
       width: '100%',
       maxWidth: '420px',
-      height: '100dvh',
       background: 'var(--bg-primary)',
-      zIndex: 999,
       display: 'flex',
       flexDirection: 'column',
       animation: 'slideInRight 0.28s ease-out'
@@ -221,41 +189,28 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
       {/* Contenido scrollable */}
       <div style={{
         flex: 1, overflowY: 'auto', overflowX: 'hidden',
-        padding: '24px 20px 24px',
-        display: 'flex', flexDirection: 'column',
-        gap: '24px', WebkitOverflowScrolling: 'touch'
+        WebkitOverflowScrolling: 'touch',
+        padding: '24px 20px',
+        display: 'flex', flexDirection: 'column', gap: '24px'
       }}>
         {/* Título */}
         <div style={{ cursor: 'pointer' }} onClick={() => !editandoTitulo && setEditandoTitulo(true)}>
           {editandoTitulo ? (
-            <input
-              className="detalle-titulo-input"
-              value={titulo}
-              onChange={e => setTitulo(e.target.value)}
-              onBlur={handleTituloBlur}
-              onKeyDown={e => { if (e.key === 'Enter') handleTituloBlur() }}
-              autoFocus
-            />
+            <input className="detalle-titulo-input" value={titulo} onChange={e => setTitulo(e.target.value)} onBlur={handleTituloBlur} onKeyDown={e => { if (e.key === 'Enter') handleTituloBlur() }} autoFocus />
           ) : (
             <h2 className="detalle-titulo">
               {titulo}
               <i className="ti ti-pencil" style={{ fontSize: '14px', marginLeft: '8px', color: 'var(--text-muted)' }}></i>
             </h2>
           )}
-          <p className="reto-dias" style={{ marginTop: '4px' }}>
-            {t('detalle.dia')} {reto.dia_actual || 1} {t('detalle.de')} {reto.dias}
-          </p>
+          <p className="reto-dias" style={{ marginTop: '4px' }}>{t('detalle.dia')} {reto.dia_actual || 1} {t('detalle.de')} {reto.dias}</p>
         </div>
 
         {/* Progreso */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <svg
-            width="100" height="100" viewBox="0 0 36 36"
-            style={{ animation: fotoSubida ? 'bounce 0.6s ease 0.8s' : 'none', flexShrink: 0 }}
-          >
+          <svg width="100" height="100" viewBox="0 0 36 36" style={{ animation: fotoSubida ? 'bounce 0.6s ease 0.8s' : 'none', flexShrink: 0 }}>
             <circle cx="18" cy="18" r="15" fill="none" stroke="var(--border)" strokeWidth="3"/>
-            <circle
-              cx="18" cy="18" r="15" fill="none" stroke="var(--accent)" strokeWidth="3"
+            <circle cx="18" cy="18" r="15" fill="none" stroke="var(--accent)" strokeWidth="3"
               strokeDasharray={`${progreso / 100 * circunferencia} ${circunferencia}`}
               strokeLinecap="round" transform="rotate(-90 18 18)"
               style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
@@ -276,22 +231,12 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
               <i className="ti ti-user-plus"></i>
             </button>
           </div>
-
           {mostrarInvitar && (
             <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-              <input
-                className="input-reto"
-                placeholder="@username"
-                value={usernameInvitar}
-                onChange={e => setUsernameInvitar(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                onKeyDown={e => { if (e.key === 'Enter') handleInvitar() }}
-              />
-              <button className="btn-añadir" onClick={handleInvitar}>
-                <i className="ti ti-send"></i>
-              </button>
+              <input className="input-reto" placeholder="@username" value={usernameInvitar} onChange={e => setUsernameInvitar(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} onKeyDown={e => { if (e.key === 'Enter') handleInvitar() }} />
+              <button className="btn-añadir" onClick={handleInvitar}><i className="ti ti-send"></i></button>
             </div>
           )}
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {participantes.map((p, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -313,7 +258,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
           </div>
         </div>
 
-        {/* Comentarios — solo la lista */}
+        {/* Comentarios */}
         <div>
           <p className="detalle-seccion-titulo">{t('detalle.comentarios')}</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -329,16 +274,11 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
                     }
                   </div>
                   <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', padding: '8px 12px', flex: 1 }}>
-                    <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                      {c.perfil?.nombre || c.perfil?.username}
-                    </p>
+                    <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.perfil?.nombre || c.perfil?.username}</p>
                     <p style={{ fontSize: '13px', color: 'var(--text-primary)', marginTop: '2px' }}>{c.texto}</p>
                   </div>
                   {c.usuario_id === usuarioActualId && (
-                    <button
-                      onClick={() => handleEliminarComentario(c.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '14px', alignSelf: 'center' }}
-                    >
+                    <button onClick={() => handleEliminarComentario(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '14px', alignSelf: 'center' }}>
                       <i className="ti ti-x"></i>
                     </button>
                   )}
@@ -351,8 +291,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
 
       {/* Footer fijo */}
       <div style={{
-        padding: '10px 20px',
-        paddingBottom: 'calc(90px + env(safe-area-inset-bottom))',
+        padding: '12px 20px 16px',
         borderTop: '1px solid var(--border)',
         background: 'var(--bg-primary)',
         flexShrink: 0,
@@ -372,15 +311,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
             <i className="ti ti-send"></i>
           </button>
         </div>
-
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          ref={inputFotoRef}
-          style={{ display: 'none' }}
-          onChange={handleFoto}
-        />
+        <input type="file" accept="image/*" capture="environment" ref={inputFotoRef} style={{ display: 'none' }} onChange={handleFoto} />
         <button
           className="btn-principal"
           style={{ opacity: yaSubioFoto ? 0.5 : 1, cursor: yaSubioFoto || subiendo ? 'not-allowed' : 'pointer' }}
@@ -391,6 +322,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
         </button>
       </div>
     </div>
+  </div>
   )
 }
 

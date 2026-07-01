@@ -1373,3 +1373,12 @@ select.input-reto {
   background: linear-gradient(135deg, rgba(245,166,35,0.12) 0%, rgba(245,166,35,0.06) 100%);
   border-color: rgba(245,166,35,0.4);
 }
+
+.detalle-screen-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-primary);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+}
