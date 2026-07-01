@@ -221,7 +221,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
       {/* Contenido scrollable */}
       <div style={{
         flex: 1, overflowY: 'auto', overflowX: 'hidden',
-        padding: '24px 20px 12px',
+        padding: '24px 20px 24px',
         display: 'flex', flexDirection: 'column',
         gap: '24px', WebkitOverflowScrolling: 'touch'
       }}>
@@ -313,7 +313,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
           </div>
         </div>
 
-        {/* Comentarios — solo la lista, sin el input */}
+        {/* Comentarios — solo la lista */}
         <div>
           <p className="detalle-seccion-titulo">{t('detalle.comentarios')}</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -349,20 +349,17 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
         </div>
       </div>
 
-      {/* Footer fijo — comentario + foto */}
+      {/* Footer fijo */}
       <div style={{
-      padding: '10px 20px',
-      paddingBottom: 'calc(120px + env(safe-area-inset-bottom))',
-      borderTop: '1px solid var(--border)',
-      background: 'var(--bg-primary)',
-      flexShrink: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '8px',
-      position: 'sticky',
-      bottom: 0,
-      zIndex: 10
-    }}>
+        padding: '10px 20px',
+        paddingBottom: 'calc(90px + env(safe-area-inset-bottom))',
+        borderTop: '1px solid var(--border)',
+        background: 'var(--bg-primary)',
+        flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px'
+      }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           <input
             className="input-reto"
@@ -390,7 +387,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
           disabled={yaSubioFoto || subiendo}
           onClick={() => inputFotoRef.current.click()}
         >
-          {subiendo ? '⏳ Subiendo...' : yaSubioFoto ? t('detalle.fotoSubida') : t('detalle.subirFoto')}
+          {subiendo ? '⏳' : yaSubioFoto ? t('detalle.fotoSubida') : t('detalle.subirFoto')}
         </button>
       </div>
     </div>
