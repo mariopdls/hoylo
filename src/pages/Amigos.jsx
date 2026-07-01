@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
+import { createPortal } from 'react-dom'
 import {
   cargarInvitacionesPendientes, aceptarInvitacion, rechazarInvitacion,
   enviarSolicitudAmistad, cargarSolicitudesPendientes,
@@ -10,7 +11,7 @@ import {
 } from '../services/social'
 import PerfilAmigo from './PerfilAmigo'
 
-function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones, onToast }) {
+function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificaciones, onToast }) {
   const { t } = useTranslation()
   const [tab, setTab] = useState('solicitudes')
   const [invitacionesRetos, setInvitacionesRetos] = useState([])
@@ -42,50 +43,50 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones, onToast })
     setCargando(false)
   }
 
-    const handleAceptarReto = async (inv) => {
+  const handleAceptarReto = async (inv) => {
     await aceptarInvitacion(inv.id, inv.reto_id, usuario.id)
     setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
     onRecargarRetos()
     onRecargarNotificaciones?.()
     onToast?.(t('toast.teUniste'))
-    }
+  }
 
-    const handleRechazarReto = async (inv) => {
+  const handleRechazarReto = async (inv) => {
     await rechazarInvitacion(inv.id)
     setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
     onRecargarNotificaciones?.()
     onToast?.(t('toast.invitacionRechazada'))
-   }
+  }
 
   const handleAceptarAmistad = async (sol) => {
-  await aceptarSolicitudAmistad(sol.id, sol.de_usuario_id)
-  setSolicitudesAmistad(prev => prev.filter(s => s.id !== sol.id))
-  const amigosLista = await cargarAmigos()
-  setAmigos(amigosLista)
-  onRecargarNotificaciones?.()
-  onToast?.(t('toast.ahoraAmigos'))
+    await aceptarSolicitudAmistad(sol.id, sol.de_usuario_id)
+    setSolicitudesAmistad(prev => prev.filter(s => s.id !== sol.id))
+    const amigosLista = await cargarAmigos()
+    setAmigos(amigosLista)
+    onRecargarNotificaciones?.()
+    onToast?.(t('toast.ahoraAmigos'))
   }
 
   const handleRechazarAmistad = async (sol) => {
-  await rechazarSolicitudAmistad(sol.id)
-  setSolicitudesAmistad(prev => prev.filter(s => s.id !== sol.id))
-  onRecargarNotificaciones?.()
-  onToast?.(t('toast.solicitudRechazada'))
+    await rechazarSolicitudAmistad(sol.id)
+    setSolicitudesAmistad(prev => prev.filter(s => s.id !== sol.id))
+    onRecargarNotificaciones?.()
+    onToast?.(t('toast.solicitudRechazada'))
   }
 
   const handleAceptarSolicitudReto = async (sol) => {
-  await aceptarSolicitudReto(sol.id, sol.reto_id, sol.usuario_id)
-  setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
-  onRecargarRetos()
-  onRecargarNotificaciones?.()
-  onToast?.(t('toast.usuarioAñadido'))
+    await aceptarSolicitudReto(sol.id, sol.reto_id, sol.usuario_id)
+    setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
+    onRecargarRetos()
+    onRecargarNotificaciones?.()
+    onToast?.(t('toast.usuarioAñadido'))
   }
 
   const handleRechazarSolicitudReto = async (sol) => {
-  await rechazarSolicitudReto(sol.id)
-  setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
-  onRecargarNotificaciones?.()
-  onToast?.(t('toast.solicitudRechazada'))
+    await rechazarSolicitudReto(sol.id)
+    setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
+    onRecargarNotificaciones?.()
+    onToast?.(t('toast.solicitudRechazada'))
   }
 
   const handleBuscar = async (valor) => {
@@ -99,19 +100,15 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones, onToast })
   }
 
   const handleSolicitarDesdeResultado = async (u) => {
-  const resultado = await enviarSolicitudAmistad(u.username)
-  onToast?.(resultado.error || t('toast.solicitudEnviada'), resultado.error ? 'error' : 'ok')
-  if (!resultado.error) {
-    setUsernameSolicitar('')
-    setResultadosBusqueda([])
-  }
+    const resultado = await enviarSolicitudAmistad(u.username)
+    onToast?.(resultado.error || t('toast.solicitudEnviada'), resultado.error ? 'error' : 'ok')
+    if (!resultado.error) {
+      setUsernameSolicitar('')
+      setResultadosBusqueda([])
+    }
   }
 
   const totalPendientes = invitacionesRetos.length + solicitudesAmistad.length + solicitudesReto.length
-
-  if (amigoSeleccionado) {
-    return <PerfilAmigo amigoId={amigoSeleccionado} onVolver={() => setAmigoSeleccionado(null)} />
-  }
 
   if (cargando) return <div style={{ padding: '20px' }}><p className="guia-texto">{t('amigos.cargando')}</p></div>
 
@@ -297,6 +294,15 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones, onToast })
           </div>
         </div>
       )}
+
+      {amigoSeleccionado && createPortal(
+      <PerfilAmigo
+        amigoId={amigoSeleccionado}
+        onVolver={() => setAmigoSeleccionado(null)}
+        retosUsuario={retosUsuario}
+      />,
+      document.body
+    )}
     </div>
   )
 }

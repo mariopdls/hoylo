@@ -298,16 +298,17 @@ function App() {
               />
             )}
             {paginaActiva === 'amigos' && (
-              <Amigos
-                usuario={usuario}
-                onRecargarRetos={async () => {
-                  const retos = await cargarRetos(usuario.id)
-                  setRetosUsuario(retos)
-                }}
-                onRecargarNotificaciones={() => cargarNotificacionesPendientes(usuario)}
-                onToast={mostrarToast}
-              />
-            )}
+            <Amigos
+              usuario={usuario}
+              retosUsuario={retosUsuario}
+              onRecargarRetos={async () => {
+                const retos = await cargarRetos(usuario.id)
+                setRetosUsuario(retos)
+              }}
+              onRecargarNotificaciones={() => cargarNotificacionesPendientes(usuario)}
+              onToast={mostrarToast}
+            />
+          )}
             {paginaActiva === 'perfil' && (
               <Perfil
                 usuario={usuario}

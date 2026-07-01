@@ -1,98 +1,215 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cargarPerfilPublico, contarRetosCompletados } from '../services/perfilesPublicos'
+import { cargarAmigosenComun, invitarAmigo } from '../services/social'
 
-function PerfilAmigo({ amigoId, onVolver }) {
+function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
   const { t } = useTranslation()
   const [perfil, setPerfil] = useState(null)
   const [retosCount, setRetosCount] = useState(0)
+  const [amigosEnComun, setAmigosEnComun] = useState([])
   const [cargando, setCargando] = useState(true)
+  const [mostrarInvitar, setMostrarInvitar] = useState(false)
+  const [invitando, setInvitando] = useState(null)
+  const [invitados, setInvitados] = useState(new Set())
 
   useEffect(() => { cargarDatos() }, [])
 
   const cargarDatos = async () => {
-    const data = await cargarPerfilPublico(amigoId)
+    const [data, count, enComun] = await Promise.all([
+      cargarPerfilPublico(amigoId),
+      contarRetosCompletados(amigoId),
+      cargarAmigosenComun(amigoId)
+    ])
     setPerfil(data)
-    const count = await contarRetosCompletados(amigoId)
     setRetosCount(count)
+    setAmigosEnComun(enComun)
     setCargando(false)
   }
 
-  if (cargando) return (
-    <div className="detalle-screen" style={{ animation: 'slideInRight 0.28s ease-out' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-        <button className="btn-volver" onClick={onVolver}><i className="ti ti-arrow-left"></i></button>
+  const handleInvitar = async (retoId) => {
+    setInvitando(retoId)
+    await invitarAmigo(retoId, perfil.username)
+    setInvitados(prev => new Set(prev).add(retoId))
+    setInvitando(null)
+  }
+
+  const Wrapper = ({ children }) => (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', justifyContent: 'center', background: 'var(--bg-primary)' }}>
+      <div style={{ width: '100%', maxWidth: '420px', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', animation: 'slideInRight 0.28s ease-out', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+          <button className="btn-volver" onClick={onVolver}><i className="ti ti-arrow-left"></i></button>
+          <div style={{ width: '38px' }} />
+        </div>
+        {children}
       </div>
-      <div style={{ padding: '24px 20px' }}><p className="guia-texto">{t('perfilAmigo.cargando')}</p></div>
     </div>
   )
 
-  if (!perfil || perfil.perfil_publico === false) return (
-    <div className="detalle-screen" style={{ animation: 'slideInRight 0.28s ease-out' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-        <button className="btn-volver" onClick={onVolver}><i className="ti ti-arrow-left"></i></button>
+  if (cargando) return (
+    <Wrapper>
+      <div style={{ padding: '24px 20px' }}>
+        <p className="guia-texto">{t('perfilAmigo.cargando')}</p>
       </div>
+    </Wrapper>
+  )
+
+  if (!perfil || perfil.perfil_publico === false) return (
+    <Wrapper>
       <div className="empty-state">
         <div className="empty-state-icon">🔒</div>
         <p className="empty-state-title">{t('perfilAmigo.privado')}</p>
       </div>
-    </div>
+    </Wrapper>
   )
 
   return (
-    <div className="detalle-screen" style={{ animation: 'slideInRight 0.28s ease-out' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-        <button className="btn-volver" onClick={onVolver}><i className="ti ti-arrow-left"></i></button>
-        <div style={{ width: '38px' }} />
-      </div>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', justifyContent: 'center', background: 'var(--bg-primary)' }}>
+      <div style={{ width: '100%', maxWidth: '420px', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', animation: 'slideInRight 0.28s ease-out', overflow: 'hidden' }}>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-          <div style={{
-            width: '90px', height: '90px', borderRadius: '50%',
-            background: perfil.avatar_url ? 'transparent' : 'linear-gradient(135deg, var(--accent), var(--accent-dark))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '36px', color: 'white', fontWeight: '700', overflow: 'hidden',
-            boxShadow: 'var(--shadow-md)'
-          }}>
-            {perfil.avatar_url
-              ? <img src={perfil.avatar_url} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : perfil.nombre?.charAt(0).toUpperCase() || '?'
-            }
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <h2 className="detalle-titulo" style={{ justifyContent: 'center' }}>{perfil.nombre}</h2>
-            <p className="reto-dias">@{perfil.username}</p>
-          </div>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+          <button className="btn-volver" onClick={onVolver}><i className="ti ti-arrow-left"></i></button>
+          <button
+            className="btn-dias"
+            style={{ fontSize: '12px' }}
+            onClick={() => setMostrarInvitar(v => !v)}
+          >
+            <i className="ti ti-user-plus" style={{ marginRight: '4px' }}></i>
+            Invitar a reto
+          </button>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 20px', textAlign: 'center', boxShadow: 'var(--shadow-xs)' }}>
-            <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>{retosCount}</p>
-            <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t('perfilAmigo.retos')}</p>
-          </div>
-        </div>
-
-        {(perfil.ciudad || perfil.pais) && (
-          <div>
-            <p className="detalle-seccion-titulo">{t('perfilAmigo.ubicacion')}</p>
-            <p className="reto-titulo">
-              <i className="ti ti-map-pin" style={{ fontSize: '14px', marginRight: '6px', color: 'var(--text-muted)' }}></i>
-              {[perfil.ciudad, perfil.pais].filter(Boolean).join(', ')}
-            </p>
+        {/* Panel de invitar */}
+        {mostrarInvitar && (
+          <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', flexShrink: 0 }}>
+            {retosUsuario?.length === 0 ? (
+              <p className="guia-texto" style={{ fontSize: '13px' }}>No tienes retos activos</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p className="detalle-seccion-titulo" style={{ marginBottom: '4px' }}>¿A cuál reto invitar?</p>
+                {retosUsuario?.map(reto => (
+                  <div key={reto.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '20px' }}>{reto.emoji}</span>
+                      <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{reto.titulo}</p>
+                    </div>
+                    <button
+                      className="btn-dias"
+                      style={{
+                        fontSize: '11px',
+                        background: invitados.has(reto.id) ? 'var(--bg-secondary)' : 'var(--accent)',
+                        color: invitados.has(reto.id) ? 'var(--text-secondary)' : 'white',
+                        border: 'none'
+                      }}
+                      disabled={invitados.has(reto.id) || invitando === reto.id}
+                      onClick={() => handleInvitar(reto.id)}
+                    >
+                      {invitados.has(reto.id) ? '✓ Enviado' : invitando === reto.id ? '...' : 'Invitar'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {perfil.aficiones?.length > 0 && (
-          <div>
-            <p className="detalle-seccion-titulo">{t('perfilAmigo.aficiones')}</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {perfil.aficiones.map(a => (
-                <span key={a} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 10px', fontSize: '12px', color: 'var(--text-primary)' }}>{a}</span>
-              ))}
+        {/* Contenido scrollable */}
+        <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          {/* Avatar + nombre */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <div style={{
+              width: '90px', height: '90px', borderRadius: '50%',
+              background: perfil.avatar_url ? 'transparent' : 'linear-gradient(135deg, var(--accent), var(--accent-dark))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '36px', color: 'white', fontWeight: '700', overflow: 'hidden',
+              boxShadow: 'var(--shadow-md)'
+            }}>
+              {perfil.avatar_url
+                ? <img src={perfil.avatar_url} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : perfil.nombre?.charAt(0).toUpperCase() || '?'
+              }
             </div>
+            <div style={{ textAlign: 'center' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>{perfil.nombre}</h2>
+              <p className="reto-dias">@{perfil.username}</p>
+            </div>
+
+            {/* Bio */}
+            {perfil.bio && (
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center', maxWidth: '280px', lineHeight: '1.5' }}>
+                "{perfil.bio}"
+              </p>
+            )}
           </div>
-        )}
+
+          {/* Stats — retos + rachas */}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center', boxShadow: 'var(--shadow-xs)', minWidth: '80px' }}>
+              <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>{retosCount}</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t('perfilAmigo.retos')}</p>
+            </div>
+            {perfil.racha_actual > 0 && (
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center', boxShadow: 'var(--shadow-xs)', minWidth: '80px' }}>
+                <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>🔥 {perfil.racha_actual}</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Racha actual</p>
+              </div>
+            )}
+            {perfil.mejor_racha > 0 && (
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center', boxShadow: 'var(--shadow-xs)', minWidth: '80px' }}>
+                <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>⭐ {perfil.mejor_racha}</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Mejor racha</p>
+              </div>
+            )}
+          </div>
+
+          {/* Amigos en común */}
+          {amigosEnComun.length > 0 && (
+            <div>
+              <p className="detalle-seccion-titulo" style={{ marginBottom: '10px' }}>
+                {amigosEnComun.length} amigo{amigosEnComun.length > 1 ? 's' : ''} en común
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {amigosEnComun.map((a, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-secondary)', borderRadius: '20px', padding: '4px 10px' }}>
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: 'white', fontWeight: '700', overflow: 'hidden', flexShrink: 0 }}>
+                      {a.avatar_url
+                        ? <img src={a.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : a.nombre?.charAt(0).toUpperCase()
+                      }
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '600' }}>{a.nombre}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Ubicación */}
+          {(perfil.ciudad || perfil.pais) && (
+            <div>
+              <p className="detalle-seccion-titulo">{t('perfilAmigo.ubicacion')}</p>
+              <p className="reto-titulo">
+                <i className="ti ti-map-pin" style={{ fontSize: '14px', marginRight: '6px', color: 'var(--text-muted)' }}></i>
+                {[perfil.ciudad, perfil.pais].filter(Boolean).join(', ')}
+              </p>
+            </div>
+          )}
+
+          {/* Aficiones */}
+          {perfil.aficiones?.length > 0 && (
+            <div>
+              <p className="detalle-seccion-titulo">{t('perfilAmigo.aficiones')}</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {perfil.aficiones.map(a => (
+                  <span key={a} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 10px', fontSize: '12px', color: 'var(--text-primary)' }}>{a}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   )

@@ -289,3 +289,35 @@ export async function buscarUsuarios(query) {
 
   return data || []
 }
+
+export async function cargarAmigosenComun(otroUsuarioId) {
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data: misAmigos } = await supabase
+    .from('amigos')
+    .select('amigo_id')
+    .eq('usuario_id', user.id)
+
+  const { data: susAmigos } = await supabase
+    .from('amigos')
+    .select('amigo_id')
+    .eq('usuario_id', otroUsuarioId)
+
+  if (!misAmigos || !susAmigos) return []
+
+  const misIds = new Set(misAmigos.map(a => a.amigo_id))
+  const enComun = susAmigos.filter(a => misIds.has(a.amigo_id))
+
+  const conPerfil = await Promise.all(
+    enComun.map(async (a) => {
+      const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('nombre, username, avatar_url')
+        .eq('id', a.amigo_id)
+        .maybeSingle()
+      return perfil
+    })
+  )
+
+  return conPerfil.filter(Boolean)
+}

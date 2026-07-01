@@ -16,7 +16,7 @@ function Perfil({ usuario, onToast }) {
   const inputFotoRef = useRef(null)
   const [perfil, setPerfil] = useState({
     nombre: '', username: '', fecha_nacimiento: '',
-    sexo: '', ciudad: '', pais: '', aficiones: [], avatar_url: ''
+    sexo: '', ciudad: '', pais: '', aficiones: [], avatar_url: '', bio: ''
   })
 
   const aficionesBase = i18n.language === 'es' ? AFICIONES_ES : AFICIONES_EN
@@ -30,26 +30,26 @@ function Perfil({ usuario, onToast }) {
   }
 
   const guardarPerfil = async () => {
-  setGuardando(true)
-  await supabase.from('perfiles').upsert({ ...perfil, id: usuario.id }, { onConflict: 'id' })
-  setGuardando(false)
-  setEditando(false)
-  onToast?.(t('toast.perfilGuardado'))
+    setGuardando(true)
+    await supabase.from('perfiles').upsert({ ...perfil, id: usuario.id }, { onConflict: 'id' })
+    setGuardando(false)
+    setEditando(false)
+    onToast?.(t('toast.perfilGuardado'))
   }
 
-const handleFotoPerfil = async (e) => {
-  const archivo = e.target.files[0]
-  if (!archivo) return
-  setSubiendoFoto(true)
-  try {
-    const url = await subirFoto(archivo)
-    setPerfil(p => ({ ...p, avatar_url: url }))
-    await supabase.from('perfiles').update({ avatar_url: url }).eq('id', usuario.id)
-    onToast?.(t('toast.fotoActualizada'))
-  } catch (err) {
-    onToast?.(t('toast.errorFotoPerfil'), 'error')
-  }
-  setSubiendoFoto(false)
+  const handleFotoPerfil = async (e) => {
+    const archivo = e.target.files[0]
+    if (!archivo) return
+    setSubiendoFoto(true)
+    try {
+      const url = await subirFoto(archivo)
+      setPerfil(p => ({ ...p, avatar_url: url }))
+      await supabase.from('perfiles').update({ avatar_url: url }).eq('id', usuario.id)
+      onToast?.(t('toast.fotoActualizada'))
+    } catch (err) {
+      onToast?.(t('toast.errorFotoPerfil'), 'error')
+    }
+    setSubiendoFoto(false)
   }
 
   const toggleAficion = (aficion) => {
@@ -83,48 +83,77 @@ const handleFotoPerfil = async (e) => {
         </button>
       </div>
 
+      {/* Avatar */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px' }}>
-        <div style={{ position: 'relative', width: '80px', height: '80px', margin: '4px' }}>
+        <div style={{ position: 'relative', width: '88px', height: '88px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div
             style={{
               width: '80px', height: '80px', borderRadius: '50%',
               background: perfil.avatar_url ? 'transparent' : 'linear-gradient(135deg, var(--accent), var(--accent-dark))',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '32px', color: 'white', fontWeight: '700',
-              cursor: 'pointer', overflow: 'hidden',
-              boxShadow: 'var(--shadow-md)'
+              cursor: 'pointer', overflow: 'hidden', boxShadow: 'var(--shadow-md)'
             }}
             onClick={() => inputFotoRef.current.click()}
           >
-            {perfil.avatar_url ? (
-              <img src={perfil.avatar_url} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              perfil.nombre ? perfil.nombre.charAt(0).toUpperCase() : usuario.email.charAt(0).toUpperCase()
-            )}
+            {perfil.avatar_url
+              ? <img src={perfil.avatar_url} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : perfil.nombre ? perfil.nombre.charAt(0).toUpperCase() : usuario.email.charAt(0).toUpperCase()
+            }
           </div>
           <div
             onClick={() => inputFotoRef.current.click()}
             style={{
-              position: 'absolute', bottom: '0px', right: '0px',
+              position: 'absolute', bottom: '4px', right: '4px',
               width: '24px', height: '24px', borderRadius: '50%',
-              background: 'var(--accent)',
-              border: '2px solid var(--bg-primary)',
+              background: 'var(--accent)', border: '2px solid var(--bg-primary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-              zIndex: 1
+              cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.2)', zIndex: 1
             }}
           >
             <i className="ti ti-camera" style={{ color: 'white', fontSize: '10px' }}></i>
           </div>
         </div>
-
         <input type="file" accept="image/*" ref={inputFotoRef} style={{ display: 'none' }} onChange={handleFotoPerfil} />
         {subiendoFoto && <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '6px' }}>Subiendo...</p>}
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px' }}>{usuario.email}</p>
+
+        {/* Rachas */}
+        {(perfil.racha_actual > 0 || perfil.mejor_racha > 0) && (
+          <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '10px 18px', textAlign: 'center', boxShadow: 'var(--shadow-xs)' }}>
+              <p style={{ fontSize: '20px', fontWeight: '800', color: 'var(--accent)' }}>🔥 {perfil.racha_actual || 0}</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Racha actual</p>
+            </div>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '10px 18px', textAlign: 'center', boxShadow: 'var(--shadow-xs)' }}>
+              <p style={{ fontSize: '20px', fontWeight: '800', color: 'var(--accent)' }}>⭐ {perfil.mejor_racha || 0}</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Mejor racha</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+        {/* Bio */}
+        <div className="perfil-campo">
+          <label className="perfil-label">Bio</label>
+          {editando
+            ? <textarea
+                className="input-reto"
+                value={perfil.bio || ''}
+                onChange={e => setPerfil(p => ({ ...p, bio: e.target.value }))}
+                placeholder="Cuéntanos algo sobre ti..."
+                maxLength={120}
+                rows={2}
+                style={{ borderRadius: '12px', resize: 'none', border: 'none', padding: '0', boxShadow: 'none', fontFamily: 'var(--font-base)', fontSize: '14px' }}
+              />
+            : <p className="perfil-valor" style={{ fontStyle: perfil.bio ? 'italic' : 'normal', color: perfil.bio ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                {perfil.bio || '—'}
+              </p>
+          }
+        </div>
+
         <div className="perfil-campo">
           <label className="perfil-label">{t('miPerfil.nombre')}</label>
           {editando
@@ -142,7 +171,7 @@ const handleFotoPerfil = async (e) => {
           <label className="perfil-label">{t('miPerfil.fechaNacimiento')}</label>
           {editando
             ? <input className="input-reto" type="date" value={perfil.fecha_nacimiento || ''} onChange={e => setPerfil(p => ({ ...p, fecha_nacimiento: e.target.value }))} style={{ border: 'none', padding: '0', borderRadius: '0', boxShadow: 'none' }} />
-            : <p className="perfil-valor">{perfil.fecha_nacimiento || '—'}</p>
+            : <p className="perfil-valor">{perfil.fecha_nacimiento ? new Date(perfil.fecha_nacimiento).toLocaleDateString('es-ES') : '—'}</p>
           }
         </div>
 

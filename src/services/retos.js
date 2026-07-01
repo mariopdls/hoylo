@@ -68,26 +68,6 @@ export async function actualizarTituloReto(retoId, titulo) {
   if (error) console.error('Error actualizando reto:', error)
 }
 
-export async function completarDia(retoId, fotoUrl = null) {
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: participante } = await supabase
-    .from('participantes_reto')
-    .select('dias_completados')
-    .eq('reto_id', retoId)
-    .eq('usuario_id', user.id)
-    .single()
-
-  await supabase
-    .from('participantes_reto')
-    .update({
-      foto_hoy: true,
-      foto_url: fotoUrl,
-      dias_completados: (participante?.dias_completados || 0) + 1
-    })
-    .eq('reto_id', retoId)
-    .eq('usuario_id', user.id)
-}
 
 export async function resetearFotosDia() {
   const { error } = await supabase
@@ -150,4 +130,39 @@ export async function rechazarSolicitudReto(solicitudId) {
     .from('solicitudes_reto')
     .update({ estado: 'rechazada' })
     .eq('id', solicitudId)
+}
+
+export async function completarDia(retoId, fotoUrl = null) {
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data: participante } = await supabase
+    .from('participantes_reto')
+    .select('dias_completados')
+    .eq('reto_id', retoId)
+    .eq('usuario_id', user.id)
+    .single()
+
+  await supabase
+    .from('participantes_reto')
+    .update({
+      foto_hoy: true,
+      foto_url: fotoUrl,
+      dias_completados: (participante?.dias_completados || 0) + 1
+    })
+    .eq('reto_id', retoId)
+    .eq('usuario_id', user.id)
+
+  const { data: perfilActual } = await supabase
+    .from('perfiles')
+    .select('racha_actual, mejor_racha')
+    .eq('id', user.id)
+    .single()
+
+  const nuevaRacha = (perfilActual?.racha_actual || 0) + 1
+  const mejorRacha = Math.max(nuevaRacha, perfilActual?.mejor_racha || 0)
+
+  await supabase
+    .from('perfiles')
+    .update({ racha_actual: nuevaRacha, mejor_racha: mejorRacha })
+    .eq('id', user.id)
 }
