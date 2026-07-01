@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './services/supabase'
 import { cargarRetos, guardarReto, eliminarReto } from './services/retos'
 import Login from './pages/auth/login'
+import { useTranslation } from 'react-i18next'
 import SelectorIdioma from './pages/onboarding/SelectorIdioma'
 import PasoPerfil from './pages/onboarding/PasoPerfil'
 import PasoAficiones from './pages/onboarding/PasoAficiones'
@@ -23,6 +24,7 @@ import lohago from './assets/lohago.PNG'
 import i18n from './i18n/i18n.js'
 
 function App() {
+  const { t } = useTranslation()
   const [usuario, setUsuario] = useState(null)
   const [cargandoAuth, setCargandoAuth] = useState(true)
   const [paso, setPaso] = useState(0)
@@ -153,17 +155,17 @@ function App() {
   const guardarRespuesta = (clave, valor) => setRespuestas(r => ({ ...r, [clave]: valor }))
 
   const añadirReto = async (reto) => {
-    const retoGuardado = await guardarReto(usuario.id, reto)
-    if (retoGuardado) {
-      setRetosUsuario(prev => [...prev, retoGuardado])
-      mostrarToast('Reto añadido')
-    }
+  const retoGuardado = await guardarReto(usuario.id, reto)
+  if (retoGuardado) {
+    setRetosUsuario(prev => [...prev, retoGuardado])
+    mostrarToast(t('toast.retoAñadido'))
   }
+}
 
   const eliminarRetoUsuario = async (retoId) => {
     await eliminarReto(retoId)
     setRetosUsuario(prev => prev.filter(r => r.id !== retoId))
-    mostrarToast('Reto eliminado')
+    mostrarToast(t('toast.retoEliminado'))
   }
 
   const actualizarReto = (retoActualizado) => {

@@ -30,26 +30,26 @@ function Perfil({ usuario, onToast }) {
   }
 
   const guardarPerfil = async () => {
-    setGuardando(true)
-    await supabase.from('perfiles').upsert({ ...perfil, id: usuario.id }, { onConflict: 'id' })
-    setGuardando(false)
-    setEditando(false)
-    onToast?.('Perfil guardado')
+  setGuardando(true)
+  await supabase.from('perfiles').upsert({ ...perfil, id: usuario.id }, { onConflict: 'id' })
+  setGuardando(false)
+  setEditando(false)
+  onToast?.(t('toast.perfilGuardado'))
   }
 
-  const handleFotoPerfil = async (e) => {
-    const archivo = e.target.files[0]
-    if (!archivo) return
-    setSubiendoFoto(true)
-    try {
-      const url = await subirFoto(archivo)
-      setPerfil(p => ({ ...p, avatar_url: url }))
-      await supabase.from('perfiles').update({ avatar_url: url }).eq('id', usuario.id)
-      onToast?.('Foto actualizada')
-    } catch (err) {
-      onToast?.('Error al subir la foto', 'error')
-    }
-    setSubiendoFoto(false)
+const handleFotoPerfil = async (e) => {
+  const archivo = e.target.files[0]
+  if (!archivo) return
+  setSubiendoFoto(true)
+  try {
+    const url = await subirFoto(archivo)
+    setPerfil(p => ({ ...p, avatar_url: url }))
+    await supabase.from('perfiles').update({ avatar_url: url }).eq('id', usuario.id)
+    onToast?.(t('toast.fotoActualizada'))
+  } catch (err) {
+    onToast?.(t('toast.errorFotoPerfil'), 'error')
+  }
+  setSubiendoFoto(false)
   }
 
   const toggleAficion = (aficion) => {
@@ -84,29 +84,38 @@ function Perfil({ usuario, onToast }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px' }}>
-        <div
-          style={{
-            width: '80px', height: '80px', borderRadius: '50%',
-            background: perfil.avatar_url ? 'transparent' : 'linear-gradient(135deg, var(--accent), var(--accent-dark))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '32px', color: 'white', fontWeight: '700',
-            cursor: 'pointer', position: 'relative', overflow: 'hidden',
-            boxShadow: 'var(--shadow-md)'
-          }}
-          onClick={() => inputFotoRef.current.click()}
-        >
-          {perfil.avatar_url ? (
-            <img src={perfil.avatar_url} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-          ) : (
-            perfil.nombre ? perfil.nombre.charAt(0).toUpperCase() : usuario.email.charAt(0).toUpperCase()
-          )}
-          <div style={{
-            position: 'absolute', bottom: '-2px', right: '-2px',
-            width: '26px', height: '26px', borderRadius: '50%',
-            background: 'var(--accent)', border: '2px solid var(--bg-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <i className="ti ti-camera" style={{ color: 'white', fontSize: '12px' }}></i>
+        <div style={{ position: 'relative', width: '80px', height: '80px', margin: '4px' }}>
+          <div
+            style={{
+              width: '80px', height: '80px', borderRadius: '50%',
+              background: perfil.avatar_url ? 'transparent' : 'linear-gradient(135deg, var(--accent), var(--accent-dark))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '32px', color: 'white', fontWeight: '700',
+              cursor: 'pointer', overflow: 'hidden',
+              boxShadow: 'var(--shadow-md)'
+            }}
+            onClick={() => inputFotoRef.current.click()}
+          >
+            {perfil.avatar_url ? (
+              <img src={perfil.avatar_url} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              perfil.nombre ? perfil.nombre.charAt(0).toUpperCase() : usuario.email.charAt(0).toUpperCase()
+            )}
+          </div>
+          <div
+            onClick={() => inputFotoRef.current.click()}
+            style={{
+              position: 'absolute', bottom: '0px', right: '0px',
+              width: '24px', height: '24px', borderRadius: '50%',
+              background: 'var(--accent)',
+              border: '2px solid var(--bg-primary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+              zIndex: 1
+            }}
+          >
+            <i className="ti ti-camera" style={{ color: 'white', fontSize: '10px' }}></i>
           </div>
         </div>
 

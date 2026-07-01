@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cargarRetosPopulares, cargarRetosDeAmigos, pedirUnirseAReto, cargarRetosDelMomento } from '../services/descubrir'
 
 function Descubrir({ usuario, onAñadirReto, onToast }) {
+  const { t } = useTranslation()
   const [tab, setTab] = useState('populares')
   const [populares, setPopulares] = useState([])
   const [deAmigos, setDeAmigos] = useState([])
@@ -25,28 +27,29 @@ function Descubrir({ usuario, onAñadirReto, onToast }) {
   }
 
   const handlePedirUnirse = async (retoId) => {
-    const resultado = await pedirUnirseAReto(retoId)
-    onToast?.(resultado.error || 'Solicitud enviada', resultado.error ? 'error' : 'ok')
-    if (!resultado.error) setSolicitados(prev => new Set(prev).add(retoId))
+  const resultado = await pedirUnirseAReto(retoId)
+  onToast?.(resultado.error || t('toast.solicitudEnviada'), resultado.error ? 'error' : 'ok')
+  if (!resultado.error) setSolicitados(prev => new Set(prev).add(retoId))
   }
 
   const handleAñadirRetoIA = (reto) => {
-    onAñadirReto({ emoji: reto.emoji, titulo: reto.titulo, dias: reto.dias })
-    setAñadidos(prev => new Set(prev).add(reto.id))
+  onAñadirReto({ emoji: reto.emoji, titulo: reto.titulo, dias: reto.dias })
+  setAñadidos(prev => new Set(prev).add(reto.id))
+  onToast?.(t('descubrir.añadido'))
   }
 
-  if (cargando) return <div style={{ padding: '20px' }}><p className="guia-texto">Cargando...</p></div>
+  if (cargando) return <div style={{ padding: '20px' }}><p className="guia-texto">{t('descubrir.cargando')}</p></div>
 
   const listaActual = tab === 'populares' ? populares : tab === 'amigos' ? deAmigos : retosIA
 
   return (
     <div style={{ paddingBottom: '20px' }}>
-      <p className="guia-intro" style={{ marginBottom: '16px' }}>Descubrir</p>
+      <p className="guia-intro" style={{ marginBottom: '16px' }}>{t('descubrir.titulo')}</p>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <button className={`btn-dias ${tab === 'populares' ? 'btn-dias-activo' : ''}`} onClick={() => setTab('populares')}>🔥 Populares</button>
-        <button className={`btn-dias ${tab === 'amigos' ? 'btn-dias-activo' : ''}`} onClick={() => setTab('amigos')}>👥 De amigos</button>
-        <button className={`btn-dias ${tab === 'ia' ? 'btn-dias-activo' : ''}`} onClick={() => setTab('ia')}>✨ Del momento</button>
+        <button className={`btn-dias ${tab === 'populares' ? 'btn-dias-activo' : ''}`} onClick={() => setTab('populares')}>{t('descubrir.populares')}</button>
+        <button className={`btn-dias ${tab === 'amigos' ? 'btn-dias-activo' : ''}`} onClick={() => setTab('amigos')}>{t('descubrir.deAmigos')}</button>
+        <button className={`btn-dias ${tab === 'ia' ? 'btn-dias-activo' : ''}`} onClick={() => setTab('ia')}>{t('descubrir.delMomento')}</button>
       </div>
 
       {listaActual.length === 0 ? (
@@ -55,10 +58,10 @@ function Descubrir({ usuario, onAñadirReto, onToast }) {
             {tab === 'populares' ? '🔥' : tab === 'amigos' ? '👥' : '✨'}
           </div>
           <p className="empty-state-title">
-            {tab === 'populares' ? 'Sin retos populares' : tab === 'amigos' ? 'Sin retos de amigos' : 'Generando retos...'}
+            {tab === 'populares' ? t('descubrir.sinPopulares') : tab === 'amigos' ? t('descubrir.sinAmigos') : t('descubrir.sinIA')}
           </p>
           <p className="empty-state-text">
-            {tab === 'populares' ? 'Sé el primero en crear un reto público' : tab === 'amigos' ? 'Tus amigos no tienen retos públicos nuevos' : 'Vuelve pronto para ver los retos del momento'}
+            {tab === 'populares' ? t('descubrir.sinPopularesTexto') : tab === 'amigos' ? t('descubrir.sinAmigosTexto') : t('descubrir.sinIATexto')}
           </p>
         </div>
       ) : (
@@ -70,10 +73,10 @@ function Descubrir({ usuario, onAñadirReto, onToast }) {
                 <div style={{ flex: 1 }}>
                   <p className="reto-titulo">{reto.titulo}</p>
                   <p className="reto-dias">
-                    {reto.dias} días
-                    {tab === 'populares' && reto.numParticipantes > 0 && ` · ${reto.numParticipantes} participantes`}
-                    {tab === 'amigos' && reto.creador && ` · de @${reto.creador.username}`}
-                    {tab === 'ia' && ' · sugerido por IA'}
+                    {reto.dias} {t('amigos.dias')}
+                    {tab === 'populares' && reto.numParticipantes > 0 && ` · ${reto.numParticipantes} ${t('descubrir.participantes')}`}
+                    {tab === 'amigos' && reto.creador && ` · @${reto.creador.username}`}
+                    {tab === 'ia' && ` · ${t('descubrir.sugeridoPorIA')}`}
                   </p>
                 </div>
               </div>
@@ -84,7 +87,7 @@ function Descubrir({ usuario, onAñadirReto, onToast }) {
                   disabled={añadidos.has(reto.id)}
                   onClick={() => handleAñadirRetoIA(reto)}
                 >
-                  {añadidos.has(reto.id) ? '✓ Añadido' : 'Añadir a mis retos'}
+                  {añadidos.has(reto.id) ? t('descubrir.añadido') : t('descubrir.añadirReto')}
                 </button>
               ) : (
                 <button
@@ -93,7 +96,7 @@ function Descubrir({ usuario, onAñadirReto, onToast }) {
                   disabled={solicitados.has(reto.id)}
                   onClick={() => handlePedirUnirse(reto.id)}
                 >
-                  {solicitados.has(reto.id) ? '✓ Solicitud enviada' : 'Pedir unirme'}
+                  {solicitados.has(reto.id) ? t('descubrir.solicitudEnviada') : t('descubrir.pedirUnirme')}
                 </button>
               )}
             </div>

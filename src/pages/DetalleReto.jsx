@@ -142,7 +142,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
     onActualizar({ ...reto, titulo })
   }
 
-  const handleFoto = async (e) => {
+    const handleFoto = async (e) => {
     const archivo = e.target.files[0]
     if (!archivo) return
     setSubiendo(true)
@@ -153,10 +153,10 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
       const nuevoDiasCompletados = progresoActual + 1
       setProgresoActual(nuevoDiasCompletados)
       onActualizar({ ...reto, dias_completados: nuevoDiasCompletados, foto_hoy: true })
-      onToast?.('Foto subida')
+      onToast?.(t('toast.fotoSubida'))
       await cargarDatos()
     } catch (err) {
-      onToast?.('Error al subir la foto', 'error')
+      onToast?.(t('toast.errorFoto'), 'error')
     }
     setSubiendo(false)
   }
@@ -164,7 +164,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
   const handleInvitar = async () => {
     if (!usernameInvitar.trim()) return
     const resultado = await invitarAmigo(reto.id, usernameInvitar.trim())
-    onToast?.(resultado.error || 'Invitación enviada', resultado.error ? 'error' : 'ok')
+    onToast?.(resultado.error || t('toast.invitacionEnviada'), resultado.error ? 'error' : 'ok')
     if (!resultado.error) {
       setUsernameInvitar('')
       setMostrarInvitar(false)
@@ -179,7 +179,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
       const coms = await cargarComentarios(reto.id)
       setComentarios(coms)
     } else {
-      onToast?.('Error al enviar el comentario', 'error')
+      onToast?.(t('toast.errorComentario'), 'error')
     }
   }
 

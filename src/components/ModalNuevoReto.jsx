@@ -14,12 +14,7 @@ function ModalNuevoReto({ onCerrar, onAñadir }) {
 
   const handleAñadir = () => {
     if (retoTexto.trim()) {
-      onAñadir({
-        emoji: emojiSeleccionado,
-        titulo: retoTexto.trim(),
-        dias: diasSeleccionados,
-        es_publico: esPublico
-      })
+      onAñadir({ emoji: emojiSeleccionado, titulo: retoTexto.trim(), dias: diasSeleccionados, es_publico: esPublico })
       onCerrar()
     }
   }
@@ -28,20 +23,16 @@ function ModalNuevoReto({ onCerrar, onAñadir }) {
     <div className="modal-overlay" onClick={onCerrar}>
       <div className="modal-contenido" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <p className="guia-intro">{t('retos.titulo')}</p>
-          <button className="modal-cerrar" onClick={onCerrar}>
-            <i className="ti ti-x"></i>
-          </button>
+          <p className="guia-intro">{t('nuevo.titulo')}</p>
+          <button className="modal-cerrar" onClick={onCerrar}><i className="ti ti-x"></i></button>
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '16px' }}>
-          <button className="btn-emoji" onClick={() => setMostrarEmojis(v => !v)}>
-            {emojiSeleccionado}
-          </button>
+          <button className="btn-emoji" onClick={() => setMostrarEmojis(v => !v)}>{emojiSeleccionado}</button>
           <input
             type="text"
             className="input-reto"
-            placeholder={t('retos.placeholder')}
+            placeholder={t('nuevo.placeholder')}
             value={retoTexto}
             onChange={e => setRetoTexto(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAñadir() }}
@@ -52,27 +43,15 @@ function ModalNuevoReto({ onCerrar, onAñadir }) {
         {mostrarEmojis && (
           <div className="emoji-picker">
             {EMOJIS.map(e => (
-              <button
-                key={e}
-                className={`emoji-option ${emojiSeleccionado === e ? 'emoji-activo' : ''}`}
-                onClick={() => { setEmojiSeleccionado(e); setMostrarEmojis(false) }}
-              >
-                {e}
-              </button>
+              <button key={e} className={`emoji-option ${emojiSeleccionado === e ? 'emoji-activo' : ''}`} onClick={() => { setEmojiSeleccionado(e); setMostrarEmojis(false) }}>{e}</button>
             ))}
           </div>
         )}
 
         <div className="dias-selector" style={{ marginTop: '14px' }}>
-          <span className="guia-texto" style={{ fontSize: '13px' }}>{t('retos.duracion')}</span>
+          <span className="guia-texto" style={{ fontSize: '13px' }}>{t('nuevo.duracion')}</span>
           {[7, 14, 21, 30].map(d => (
-            <button
-              key={d}
-              className={`btn-dias ${diasSeleccionados === d ? 'btn-dias-activo' : ''}`}
-              onClick={() => setDiasSeleccionados(d)}
-            >
-              {d}d
-            </button>
+            <button key={d} className={`btn-dias ${diasSeleccionados === d ? 'btn-dias-activo' : ''}`} onClick={() => setDiasSeleccionados(d)}>{d}d</button>
           ))}
         </div>
 
@@ -80,22 +59,17 @@ function ModalNuevoReto({ onCerrar, onAñadir }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <i className="ti ti-world" style={{ fontSize: '18px', color: 'var(--accent)' }}></i>
             <div>
-              <p className="reto-titulo" style={{ fontSize: '13px' }}>Reto público</p>
+              <p className="reto-titulo" style={{ fontSize: '13px' }}>{t('nuevo.publico')}</p>
               <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                {esPublico ? 'Otros pueden encontrarlo y pedir unirse' : 'Solo visible para ti y tus invitados'}
+                {esPublico ? t('nuevo.publicoTexto') : t('nuevo.privadoTexto')}
               </p>
             </div>
           </div>
           <div className={`toggle ${esPublico ? 'toggle-activo' : ''}`}></div>
         </div>
 
-        <button
-          className="btn-principal"
-          style={{ marginTop: '20px' }}
-          onClick={handleAñadir}
-          disabled={!retoTexto.trim()}
-        >
-          {t('retos.boton')}
+        <button className="btn-principal" style={{ marginTop: '20px' }} onClick={handleAñadir} disabled={!retoTexto.trim()}>
+          {t('nuevo.boton')}
         </button>
       </div>
     </div>,
