@@ -19,7 +19,7 @@ function PerfilAmigo({ amigoId, onVolver }) {
   }
 
   if (cargando) return (
-    <div className="detalle-screen" style={{ animation: 'slideInRight 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+    <div className="detalle-screen" style={{ animation: 'slideInRight 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }}>
       <div className="detalle-header">
         <button className="btn-volver" onClick={onVolver}>
           <i className="ti ti-arrow-left"></i>
@@ -32,7 +32,7 @@ function PerfilAmigo({ amigoId, onVolver }) {
   )
 
   if (!perfil || perfil.perfil_publico === false) return (
-    <div className="detalle-screen" style={{ animation: 'slideInRight 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+    <div className="detalle-screen" style={{ animation: 'slideInRight 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }}>
       <div className="detalle-header">
         <button className="btn-volver" onClick={onVolver}>
           <i className="ti ti-arrow-left"></i>
@@ -45,7 +45,7 @@ function PerfilAmigo({ amigoId, onVolver }) {
   )
 
   return (
-    <div className="detalle-screen" style={{ animation: 'slideInRight 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+    <div className="detalle-screen" style={{ animation: 'slideInRight 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }}>
       <div className="detalle-header">
         <button className="btn-volver" onClick={onVolver}>
           <i className="ti ti-arrow-left"></i>

@@ -10,7 +10,7 @@ import {
 } from '../services/social'
 import PerfilAmigo from './PerfilAmigo'
 
-function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
+function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones, onToast }) {
   const { t } = useTranslation()
   const [tab, setTab] = useState('solicitudes')
   const [invitacionesRetos, setInvitacionesRetos] = useState([])
@@ -21,36 +21,24 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
   const [perfil, setPerfil] = useState(null)
   const [usernameSolicitar, setUsernameSolicitar] = useState('')
   const [resultadosBusqueda, setResultadosBusqueda] = useState([])
-  const [mensaje, setMensaje] = useState(null)
   const [amigoSeleccionado, setAmigoSeleccionado] = useState(null)
 
-  useEffect(() => {
-    cargarDatos()
-  }, [])
+  useEffect(() => { cargarDatos() }, [])
 
   const cargarDatos = async () => {
     const { data } = await supabase
-      .from('perfiles')
-      .select('username, nombre')
-      .eq('id', usuario.id)
-      .maybeSingle()
-
+      .from('perfiles').select('username, nombre').eq('id', usuario.id).maybeSingle()
     setPerfil(data)
-
     if (data?.username) {
       const invs = await cargarInvitacionesPendientes(data.username)
       setInvitacionesRetos(invs)
     }
-
     const sols = await cargarSolicitudesPendientes()
     setSolicitudesAmistad(sols)
-
     const solReto = await cargarSolicitudesReto()
     setSolicitudesReto(solReto)
-
     const amigosLista = await cargarAmigos()
     setAmigos(amigosLista)
-
     setCargando(false)
   }
 
@@ -59,12 +47,14 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
     setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
     onRecargarRetos()
     onRecargarNotificaciones?.()
+    onToast?.('Te has unido al reto')
   }
 
   const handleRechazarReto = async (inv) => {
     await rechazarInvitacion(inv.id)
     setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
     onRecargarNotificaciones?.()
+    onToast?.('Invitación rechazada')
   }
 
   const handleAceptarAmistad = async (sol) => {
@@ -73,12 +63,14 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
     const amigosLista = await cargarAmigos()
     setAmigos(amigosLista)
     onRecargarNotificaciones?.()
+    onToast?.('¡Ahora sois amigos!')
   }
 
   const handleRechazarAmistad = async (sol) => {
     await rechazarSolicitudAmistad(sol.id)
     setSolicitudesAmistad(prev => prev.filter(s => s.id !== sol.id))
     onRecargarNotificaciones?.()
+    onToast?.('Solicitud rechazada')
   }
 
   const handleAceptarSolicitudReto = async (sol) => {
@@ -86,12 +78,14 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
     setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
     onRecargarRetos()
     onRecargarNotificaciones?.()
+    onToast?.('Usuario añadido al reto')
   }
 
   const handleRechazarSolicitudReto = async (sol) => {
     await rechazarSolicitudReto(sol.id)
     setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
     onRecargarNotificaciones?.()
+    onToast?.('Solicitud rechazada')
   }
 
   const handleBuscar = async (valor) => {
@@ -106,62 +100,39 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
 
   const handleSolicitarDesdeResultado = async (u) => {
     const resultado = await enviarSolicitudAmistad(u.username)
-    if (resultado.error) {
-      setMensaje({ tipo: 'error', texto: resultado.error })
-    } else {
-      setMensaje({ tipo: 'ok', texto: 'Solicitud enviada' })
+    onToast?.(resultado.error || 'Solicitud enviada', resultado.error ? 'error' : 'ok')
+    if (!resultado.error) {
       setUsernameSolicitar('')
       setResultadosBusqueda([])
     }
-    setTimeout(() => setMensaje(null), 3000)
   }
 
   const totalPendientes = invitacionesRetos.length + solicitudesAmistad.length + solicitudesReto.length
 
   if (amigoSeleccionado) {
-    return (
-      <PerfilAmigo
-        amigoId={amigoSeleccionado}
-        onVolver={() => setAmigoSeleccionado(null)}
-      />
-    )
+    return <PerfilAmigo amigoId={amigoSeleccionado} onVolver={() => setAmigoSeleccionado(null)} />
   }
 
-  if (cargando) return (
-    <div style={{ padding: '20px' }}>
-      <p className="guia-texto">Cargando...</p>
-    </div>
-  )
+  if (cargando) return <div style={{ padding: '20px' }}><p className="guia-texto">Cargando...</p></div>
 
   return (
     <div style={{ paddingBottom: '20px' }}>
       <p className="guia-intro" style={{ marginBottom: '16px' }}>Amigos</p>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-        <button
-          className={`btn-dias ${tab === 'solicitudes' ? 'btn-dias-activo' : ''}`}
-          onClick={() => setTab('solicitudes')}
-          style={{ position: 'relative' }}
-        >
+        <button className={`btn-dias ${tab === 'solicitudes' ? 'btn-dias-activo' : ''}`} onClick={() => setTab('solicitudes')}>
           Solicitudes {totalPendientes > 0 && `(${totalPendientes})`}
         </button>
-        <button
-          className={`btn-dias ${tab === 'amigos' ? 'btn-dias-activo' : ''}`}
-          onClick={() => setTab('amigos')}
-        >
+        <button className={`btn-dias ${tab === 'amigos' ? 'btn-dias-activo' : ''}`} onClick={() => setTab('amigos')}>
           Amigos ({amigos.length})
         </button>
-        <button
-          className={`btn-dias ${tab === 'buscar' ? 'btn-dias-activo' : ''}`}
-          onClick={() => setTab('buscar')}
-        >
+        <button className={`btn-dias ${tab === 'buscar' ? 'btn-dias-activo' : ''}`} onClick={() => setTab('buscar')}>
           Añadir
         </button>
       </div>
 
       {tab === 'solicitudes' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
           {solicitudesAmistad.length > 0 && (
             <div>
               <p className="detalle-seccion-titulo" style={{ marginBottom: '10px' }}>Solicitudes de amistad</p>
@@ -169,25 +140,17 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
                 {solicitudesAmistad.map((sol, i) => (
                   <div key={sol.id} className="config-fila" style={{ cursor: 'default', animation: `staggerIn 0.25s ease ${i * 0.04}s both` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div className="participante-avatar">
-                        {sol.perfil?.nombre?.charAt(0).toUpperCase() || '?'}
-                      </div>
+                      <div className="participante-avatar">{sol.perfil?.nombre?.charAt(0).toUpperCase() || '?'}</div>
                       <div>
                         <p className="reto-titulo">{sol.perfil?.nombre}</p>
                         <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{sol.perfil?.username}</p>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px' }}>
-                      <button
-                        onClick={() => handleRechazarAmistad(sol)}
-                        style={{ background: 'var(--bg-secondary)', border: '0.5px solid var(--border)', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)' }}
-                      >
+                      <button onClick={() => handleRechazarAmistad(sol)} style={{ background: 'var(--bg-secondary)', border: '0.5px solid var(--border)', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)' }}>
                         <i className="ti ti-x"></i>
                       </button>
-                      <button
-                        onClick={() => handleAceptarAmistad(sol)}
-                        style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px', color: 'white' }}
-                      >
+                      <button onClick={() => handleAceptarAmistad(sol)} style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px', color: 'white' }}>
                         <i className="ti ti-check"></i>
                       </button>
                     </div>
@@ -202,11 +165,7 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
               <p className="detalle-seccion-titulo" style={{ marginBottom: '10px' }}>Invitaciones a retos</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {invitacionesRetos.map((inv, i) => (
-                  <div key={inv.id} style={{
-                    background: 'var(--bg-card)', border: '0.5px solid var(--border)',
-                    borderRadius: '14px', padding: '14px 16px',
-                    animation: `staggerIn 0.25s ease ${i * 0.04}s both`
-                  }}>
+                  <div key={inv.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '14px 16px', animation: `staggerIn 0.25s ease ${i * 0.04}s both` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                       <span style={{ fontSize: '24px' }}>{inv.retos?.emoji}</span>
                       <div style={{ flex: 1 }}>
@@ -215,16 +174,8 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        className="btn-principal"
-                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '0.5px solid var(--border)' }}
-                        onClick={() => handleRechazarReto(inv)}
-                      >
-                        Rechazar
-                      </button>
-                      <button className="btn-principal" onClick={() => handleAceptarReto(inv)}>
-                        Unirme
-                      </button>
+                      <button className="btn-principal" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border)', boxShadow: 'none' }} onClick={() => handleRechazarReto(inv)}>Rechazar</button>
+                      <button className="btn-principal" onClick={() => handleAceptarReto(inv)}>Unirme</button>
                     </div>
                   </div>
                 ))}
@@ -237,11 +188,7 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
               <p className="detalle-seccion-titulo" style={{ marginBottom: '10px' }}>Quieren unirse a tus retos</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {solicitudesReto.map((sol, i) => (
-                  <div key={sol.id} style={{
-                    background: 'var(--bg-card)', border: '0.5px solid var(--border)',
-                    borderRadius: '14px', padding: '14px 16px',
-                    animation: `staggerIn 0.25s ease ${i * 0.04}s both`
-                  }}>
+                  <div key={sol.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '14px 16px', animation: `staggerIn 0.25s ease ${i * 0.04}s both` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                       <span style={{ fontSize: '24px' }}>{sol.reto?.emoji}</span>
                       <div style={{ flex: 1 }}>
@@ -250,16 +197,8 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        className="btn-principal"
-                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '0.5px solid var(--border)' }}
-                        onClick={() => handleRechazarSolicitudReto(sol)}
-                      >
-                        Rechazar
-                      </button>
-                      <button className="btn-principal" onClick={() => handleAceptarSolicitudReto(sol)}>
-                        Aceptar
-                      </button>
+                      <button className="btn-principal" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border)', boxShadow: 'none' }} onClick={() => handleRechazarSolicitudReto(sol)}>Rechazar</button>
+                      <button className="btn-principal" onClick={() => handleAceptarSolicitudReto(sol)}>Aceptar</button>
                     </div>
                   </div>
                 ))}
@@ -268,11 +207,10 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
           )}
 
           {totalPendientes === 0 && (
-            <div style={{
-              background: 'var(--bg-card)', border: '0.5px solid var(--border)',
-              borderRadius: '14px', padding: '20px', textAlign: 'center'
-            }}>
-              <p className="guia-texto" style={{ fontSize: '13px' }}>No tienes solicitudes pendientes</p>
+            <div className="empty-state">
+              <div className="empty-state-icon">🎉</div>
+              <p className="empty-state-title">Todo al día</p>
+              <p className="empty-state-text">No tienes solicitudes pendientes</p>
             </div>
           )}
         </div>
@@ -281,20 +219,14 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
       {tab === 'amigos' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {amigos.length === 0 ? (
-            <div style={{
-              background: 'var(--bg-card)', border: '0.5px solid var(--border)',
-              borderRadius: '14px', padding: '20px', textAlign: 'center'
-            }}>
-              <p className="guia-texto" style={{ fontSize: '13px' }}>Aún no tienes amigos en Hoylo</p>
+            <div className="empty-state">
+              <div className="empty-state-icon">👋</div>
+              <p className="empty-state-title">Sin amigos todavía</p>
+              <p className="empty-state-text">Busca a tus amigos por username y empieza retos juntos</p>
             </div>
           ) : (
             amigos.map((amigo, i) => (
-              <div
-                key={i}
-                className="config-fila"
-                style={{ animation: `staggerIn 0.25s ease ${i * 0.04}s both` }}
-                onClick={() => setAmigoSeleccionado(amigo.id)}
-              >
+              <div key={i} className="config-fila" style={{ animation: `staggerIn 0.25s ease ${i * 0.04}s both` }} onClick={() => setAmigoSeleccionado(amigo.id)}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div className="participante-avatar" style={{ overflow: 'hidden' }}>
                     {amigo.avatar_url
@@ -328,11 +260,7 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
               {resultadosBusqueda.length > 0 && (
                 <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {resultadosBusqueda.map((u, i) => (
-                    <div
-                      key={u.id}
-                      className="config-fila"
-                      style={{ cursor: 'default', animation: `staggerIn 0.25s ease ${i * 0.04}s both` }}
-                    >
+                    <div key={u.id} className="config-fila" style={{ cursor: 'default', animation: `staggerIn 0.25s ease ${i * 0.04}s both` }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div className="participante-avatar" style={{ overflow: 'hidden' }}>
                           {u.avatar_url
@@ -345,11 +273,7 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
                           <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{u.username}</p>
                         </div>
                       </div>
-                      <button
-                        className="btn-añadir"
-                        style={{ width: '32px', height: '32px', fontSize: '14px' }}
-                        onClick={() => handleSolicitarDesdeResultado(u)}
-                      >
+                      <button className="btn-añadir" style={{ width: '32px', height: '32px', fontSize: '14px' }} onClick={() => handleSolicitarDesdeResultado(u)}>
                         <i className="ti ti-user-plus"></i>
                       </button>
                     </div>
@@ -362,11 +286,6 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
                 </p>
               )}
             </div>
-            {mensaje && (
-              <p style={{ fontSize: '12px', color: mensaje.tipo === 'ok' ? '#3B6D11' : '#E24B4A', marginTop: '6px', paddingLeft: '4px' }}>
-                {mensaje.texto}
-              </p>
-            )}
           </div>
 
           <div>
@@ -374,13 +293,8 @@ function Amigos({ usuario, onRecargarRetos, onRecargarNotificaciones }) {
             <p className="guia-texto" style={{ fontSize: '13px', marginBottom: '12px' }}>
               Comparte tu username para que tus amigos puedan añadirte.
             </p>
-            <div style={{
-              background: 'var(--bg-card)', border: '1.5px solid var(--accent)',
-              borderRadius: '14px', padding: '14px 16px', textAlign: 'center'
-            }}>
-              <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>
-                @{perfil?.username || '—'}
-              </p>
+            <div style={{ background: 'var(--bg-card)', border: '1.5px solid var(--accent)', borderRadius: '14px', padding: '14px 16px', textAlign: 'center' }}>
+              <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>@{perfil?.username || '—'}</p>
             </div>
           </div>
         </div>

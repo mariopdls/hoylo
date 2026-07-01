@@ -109,8 +109,12 @@ function Home({ retos, usuario, onNuevoReto, onEliminarReto, onActualizarReto })
 
       <div className="retos-lista" style={{ gap: 0 }}>
         {retos.length === 0 && (
-          <p className="guia-texto">{t('home.sinRetos')}</p>
-        )}
+        <div className="empty-state">
+          <div className="empty-state-icon">🎯</div>
+          <p className="empty-state-title">Sin retos todavía</p>
+          <p className="empty-state-text">Crea tu primer reto y empieza a construir hábitos hoy</p>
+        </div>
+      )}
         {retos.map((reto, i) => (
           <RetoCard
             key={reto.id || i}

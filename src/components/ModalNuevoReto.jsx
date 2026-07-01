@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { createPortal } from 'react-dom'
 
 const EMOJIS = ['⭐', '🏃', '💧', '📵', '🥗', '📚', '🧘', '💪', '🎯', '🌱', '😴', '✍️', '🎨', '🚴', '🧹']
 
@@ -23,7 +24,7 @@ function ModalNuevoReto({ onCerrar, onAñadir }) {
     }
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onCerrar}>
       <div className="modal-contenido" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
@@ -44,6 +45,7 @@ function ModalNuevoReto({ onCerrar, onAñadir }) {
             value={retoTexto}
             onChange={e => setRetoTexto(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAñadir() }}
+            autoFocus
           />
         </div>
 
@@ -96,7 +98,8 @@ function ModalNuevoReto({ onCerrar, onAñadir }) {
           {t('retos.boton')}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

@@ -17,6 +17,7 @@ import Descubrir from './pages/Descubrir'
 import Cargando from './components/Cargando'
 import ModalConfig from './components/ModalConfig'
 import PullToRefresh from './components/PullToRefresh'
+import Toast from './components/Toast'
 import logo from './assets/logo3.png'
 import lohago from './assets/lohago.PNG'
 import i18n from './i18n/i18n.js'
@@ -35,6 +36,11 @@ function App() {
   const [animandoLogo, setAnimandoLogo] = useState(false)
   const [desvaneciendo, setDesvaneciendo] = useState(false)
   const [notificacionesPendientes, setNotificacionesPendientes] = useState(0)
+  const [toast, setToast] = useState(null)
+
+  const mostrarToast = (texto, tipo = 'ok') => {
+    setToast({ texto, tipo })
+  }
 
   const cargarNotificacionesPendientes = async (user) => {
     const { data: perfilData } = await supabase
@@ -110,15 +116,9 @@ function App() {
     const inicializar = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       const user = session?.user ?? null
-
       if (!activo) return
-
       setUsuario(user)
-
-      if (user) {
-        await cargarPerfilYRetos(user)
-      }
-
+      if (user) await cargarPerfilYRetos(user)
       if (activo) setCargandoAuth(false)
     }
 
@@ -150,18 +150,20 @@ function App() {
 
   const siguiente = () => setPaso(p => p + 1)
   const anterior = () => setPaso(p => p - 1)
-  const guardarRespuesta = (clave, valor) => {
-    setRespuestas(r => ({ ...r, [clave]: valor }))
-  }
+  const guardarRespuesta = (clave, valor) => setRespuestas(r => ({ ...r, [clave]: valor }))
 
   const añadirReto = async (reto) => {
     const retoGuardado = await guardarReto(usuario.id, reto)
-    if (retoGuardado) setRetosUsuario(prev => [...prev, retoGuardado])
+    if (retoGuardado) {
+      setRetosUsuario(prev => [...prev, retoGuardado])
+      mostrarToast('Reto añadido')
+    }
   }
 
   const eliminarRetoUsuario = async (retoId) => {
     await eliminarReto(retoId)
     setRetosUsuario(prev => prev.filter(r => r.id !== retoId))
+    mostrarToast('Reto eliminado')
   }
 
   const actualizarReto = (retoActualizado) => {
@@ -276,10 +278,23 @@ function App() {
                 setRetosUsuario(retos)
                 await cargarNotificacionesPendientes(usuario)
               }}>
-                <Home retos={retosUsuario} usuario={usuario} onNuevoReto={añadirReto} onEliminarReto={eliminarRetoUsuario} onActualizarReto={actualizarReto} />
+                <Home
+                  retos={retosUsuario}
+                  usuario={usuario}
+                  onNuevoReto={añadirReto}
+                  onEliminarReto={eliminarRetoUsuario}
+                  onActualizarReto={actualizarReto}
+                  onToast={mostrarToast}
+                />
               </PullToRefresh>
             )}
-            {paginaActiva === 'descubrir' && <Descubrir usuario={usuario} onAñadirReto={añadirReto} />}
+            {paginaActiva === 'descubrir' && (
+              <Descubrir
+                usuario={usuario}
+                onAñadirReto={añadirReto}
+                onToast={mostrarToast}
+              />
+            )}
             {paginaActiva === 'amigos' && (
               <Amigos
                 usuario={usuario}
@@ -288,9 +303,15 @@ function App() {
                   setRetosUsuario(retos)
                 }}
                 onRecargarNotificaciones={() => cargarNotificacionesPendientes(usuario)}
+                onToast={mostrarToast}
               />
             )}
-            {paginaActiva === 'perfil' && <Perfil usuario={usuario} />}
+            {paginaActiva === 'perfil' && (
+              <Perfil
+                usuario={usuario}
+                onToast={mostrarToast}
+              />
+            )}
           </main>
 
           <nav className="app-nav">
@@ -332,6 +353,8 @@ function App() {
               onToggleDark={toggleDark}
             />
           )}
+
+          <Toast mensaje={toast} onClose={() => setToast(null)} />
         </div>
       )}
     </div>
