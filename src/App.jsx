@@ -15,6 +15,7 @@ import Home from './pages/Home'
 import Perfil from './pages/Perfil'
 import Amigos from './pages/Amigos'
 import Descubrir from './pages/Descubrir'
+import Dashboard from './pages/Dashboard'
 import Cargando from './components/Cargando'
 import ModalConfig from './components/ModalConfig'
 import PullToRefresh from './components/PullToRefresh'
@@ -41,9 +42,16 @@ function App() {
   const [desvaneciendo, setDesvaneciendo] = useState(false)
   const [notificacionesPendientes, setNotificacionesPendientes] = useState(0)
   const [toast, setToast] = useState(null)
+  const [esPc, setEsPc] = useState(window.innerWidth >= 900)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+  }, [])
+
+  useEffect(() => {
+    const handleResize = () => setEsPc(window.innerWidth >= 900)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   const mostrarToast = (texto, tipo = 'ok') => {
@@ -241,6 +249,19 @@ function App() {
             />
           )}
         </div>
+      ) : esPc ? (
+        <Dashboard
+          usuario={usuario}
+          onNuevoReto={añadirReto}
+          onEliminarReto={eliminarRetoUsuario}
+          onActualizarReto={actualizarReto}
+          onToast={mostrarToast}
+          idioma={idioma}
+          onToggleIdioma={toggleIdioma}
+          darkMode={darkMode}
+          onToggleDark={toggleDark}
+          notificacionesPendientes={notificacionesPendientes}
+        />
       ) : (
         <div className="app-container">
           <header className="app-header">
