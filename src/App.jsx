@@ -104,26 +104,43 @@ function App() {
   }
 
   const guardarPerfilInicial = async (idiomaActual, user) => {
-    const perfilData = respuestas.perfil || {}
-    const aficiones = respuestas.aficiones || []
+  const perfilData = respuestas.perfil || {}
+  const aficiones = respuestas.aficiones || []
 
-    if (!user) {
-      console.error('No hay usuario')
-      return null
-    }
-
-    const { error } = await supabase
-      .from('perfiles')
-      .upsert({
-        id: user.id,
-        ...perfilData,
-        aficiones,
-        idioma: idiomaActual
-      }, { onConflict: 'id' })
-
-    if (error) console.error('Error guardando perfil:', error)
-    return user
+  if (!user) {
+    console.error('No hay usuario')
+    return null
   }
+
+  // Esperar a que el token esté disponible
+  let session = null
+  let intentos = 0
+  while (!session && intentos < 20) {
+    const { data } = await supabase.auth.getSession()
+    session = data.session
+    if (!session) {
+      await new Promise(resolve => setTimeout(resolve, 300))
+      intentos++
+    }
+  }
+
+  if (!session) {
+    console.error('Token no disponible')
+    return null
+  }
+
+  const { error } = await supabase
+    .from('perfiles')
+    .upsert({
+      id: user.id,
+      ...perfilData,
+      aficiones,
+      idioma: idiomaActual
+    }, { onConflict: 'id' })
+
+  if (error) console.error('Error guardando perfil:', error)
+  return user
+}
 
   useEffect(() => {
     let activo = true
