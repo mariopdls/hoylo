@@ -104,29 +104,28 @@ function App() {
   }
 
   const guardarPerfilInicial = async (idiomaActual) => {
-    const perfilData = respuestas.perfil || {}
-    const aficiones = respuestas.aficiones || []
+  const perfilData = respuestas.perfil || {}
+  const aficiones = respuestas.aficiones || []
 
-    // Esperar a que auth.users tenga el usuario
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user) {
-      console.error('No hay sesión disponible')
-      return null
-    }
-
-    await supabase
-      .from('perfiles')
-      .upsert({
-        id: session.user.id,
-        ...perfilData,
-        aficiones,
-        idioma: idiomaActual
-      }, { onConflict: 'id' })
-
-    return session.user
+  if (!usuario?.id) {
+    console.error('No hay usuario en el estado')
+    return null
   }
+
+  await new Promise(resolve => setTimeout(resolve, 2000))
+
+  const { error } = await supabase
+    .from('perfiles')
+    .upsert({
+      id: usuario.id,
+      ...perfilData,
+      aficiones,
+      idioma: idiomaActual
+    }, { onConflict: 'id' })
+
+  if (error) console.error('Error guardando perfil:', error)
+  return usuario
+}
 
   useEffect(() => {
     let activo = true
@@ -232,15 +231,16 @@ function App() {
               respuestas={respuestas}
               onBack={anterior}
               onFin={async (retos) => {
-                const user = await guardarPerfilInicial(idioma)
-                if (!user) return
-                for (const reto of retos) {
-                  await guardarReto(user.id, reto)
-                }
-                const retosGuardados = await cargarRetos(user.id)
-                setRetosUsuario(retosGuardados)
-                siguiente()
-              }}
+              const user = await guardarPerfilInicial(idioma)
+              if (!user) return
+              await new Promise(resolve => setTimeout(resolve, 500))
+              for (const reto of retos) {
+                await guardarReto(user.id, reto)
+              }
+              const retosGuardados = await cargarRetos(user.id)
+              setRetosUsuario(retosGuardados)
+              siguiente()
+            }}
             />
           )}
         </div>
