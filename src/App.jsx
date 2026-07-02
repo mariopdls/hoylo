@@ -103,37 +103,26 @@ function App() {
     }
   }
 
-  const guardarPerfilInicial = async (idiomaActual) => {
+  const guardarPerfilInicial = async (idiomaActual, user) => {
     const perfilData = respuestas.perfil || {}
     const aficiones = respuestas.aficiones || []
 
-    let session = null
-    let intentos = 0
-    while (!session && intentos < 10) {
-      const { data } = await supabase.auth.getSession()
-      session = data.session
-      if (!session) {
-        await new Promise(resolve => setTimeout(resolve, 500))
-        intentos++
-      }
-    }
-
-    if (!session) {
-      console.error('No se pudo obtener la sesión')
+    if (!user) {
+      console.error('No hay usuario')
       return null
     }
 
     const { error } = await supabase
       .from('perfiles')
       .upsert({
-        id: session.user.id,
+        id: user.id,
         ...perfilData,
         aficiones,
         idioma: idiomaActual
       }, { onConflict: 'id' })
 
     if (error) console.error('Error guardando perfil:', error)
-    return session
+    return user
   }
 
   useEffect(() => {
@@ -240,12 +229,12 @@ function App() {
               respuestas={respuestas}
               onBack={anterior}
               onFin={async (retos) => {
-                const session = await guardarPerfilInicial(idioma)
-                if (!session) return
+                const user = await guardarPerfilInicial(idioma, usuario)
+                if (!user) return
                 for (const reto of retos) {
-                  await guardarReto(session.user.id, reto)
+                  await guardarReto(user.id, reto)
                 }
-                const retosGuardados = await cargarRetos(session.user.id)
+                const retosGuardados = await cargarRetos(user.id)
                 setRetosUsuario(retosGuardados)
                 siguiente()
               }}
