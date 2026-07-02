@@ -103,44 +103,19 @@ function App() {
     }
   }
 
-  const guardarPerfilInicial = async (idiomaActual, user) => {
-  const perfilData = respuestas.perfil || {}
-  const aficiones = respuestas.aficiones || []
-
-  if (!user) {
-    console.error('No hay usuario')
-    return null
+  const guardarPerfilInicial = async (retos, idiomaActual) => {
+    const perfilData = respuestas.perfil || {}
+    const aficiones = respuestas.aficiones || []
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await supabase
+      .from('perfiles')
+      .upsert({
+        id: usuario.id,
+        ...perfilData,
+        aficiones,
+        idioma: idiomaActual
+      }, { onConflict: 'id' })
   }
-
-  // Esperar a que el token esté disponible
-  let session = null
-  let intentos = 0
-  while (!session && intentos < 20) {
-    const { data } = await supabase.auth.getSession()
-    session = data.session
-    if (!session) {
-      await new Promise(resolve => setTimeout(resolve, 300))
-      intentos++
-    }
-  }
-
-  if (!session) {
-    console.error('Token no disponible')
-    return null
-  }
-
-  const { error } = await supabase
-    .from('perfiles')
-    .upsert({
-      id: user.id,
-      ...perfilData,
-      aficiones,
-      idioma: idiomaActual
-    }, { onConflict: 'id' })
-
-  if (error) console.error('Error guardando perfil:', error)
-  return user
-}
 
   useEffect(() => {
     let activo = true
@@ -203,11 +178,12 @@ function App() {
   }
 
   const toggleDark = () => {
-    const nuevo = !darkMode
-    setDarkMode(nuevo)
-    localStorage.setItem('darkMode', nuevo)
-    document.documentElement.setAttribute('data-theme', nuevo ? 'dark' : 'light')
-  }
+  const nuevo = !darkMode
+  console.log('toggleDark llamado, nuevo valor:', nuevo)
+  setDarkMode(nuevo)
+  localStorage.setItem('darkMode', String(nuevo))
+  document.documentElement.setAttribute('data-theme', nuevo ? 'dark' : 'light')
+}
 
   const toggleIdioma = () => {
     const nuevo = idioma === 'es' ? 'en' : 'es'
@@ -246,12 +222,11 @@ function App() {
               respuestas={respuestas}
               onBack={anterior}
               onFin={async (retos) => {
-                const user = await guardarPerfilInicial(idioma, usuario)
-                if (!user) return
+                await guardarPerfilInicial(retos, idioma)
                 for (const reto of retos) {
-                  await guardarReto(user.id, reto)
+                  await guardarReto(usuario.id, reto)
                 }
-                const retosGuardados = await cargarRetos(user.id)
+                const retosGuardados = await cargarRetos(usuario.id)
                 setRetosUsuario(retosGuardados)
                 siguiente()
               }}
