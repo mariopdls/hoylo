@@ -27,15 +27,15 @@ function Descubrir({ usuario, onAñadirReto, onToast }) {
   }
 
   const handlePedirUnirse = async (retoId) => {
-  const resultado = await pedirUnirseAReto(retoId)
-  onToast?.(resultado.error || t('toast.solicitudEnviada'), resultado.error ? 'error' : 'ok')
-  if (!resultado.error) setSolicitados(prev => new Set(prev).add(retoId))
+    const resultado = await pedirUnirseAReto(retoId)
+    onToast?.(resultado.error || t('toast.solicitudEnviada'), resultado.error ? 'error' : 'ok')
+    if (!resultado.error) setSolicitados(prev => new Set(prev).add(retoId))
   }
 
   const handleAñadirRetoIA = (reto) => {
-  onAñadirReto({ emoji: reto.emoji, titulo: reto.titulo, dias: reto.dias })
-  setAñadidos(prev => new Set(prev).add(reto.id))
-  onToast?.(t('descubrir.añadido'))
+    onAñadirReto({ emoji: reto.emoji, titulo: reto.titulo, dias: reto.dias })
+    setAñadidos(prev => new Set(prev).add(reto.id))
+    onToast?.(t('descubrir.añadido'))
   }
 
   if (cargando) return <div style={{ padding: '20px' }}><p className="guia-texto">{t('descubrir.cargando')}</p></div>
@@ -72,7 +72,12 @@ function Descubrir({ usuario, onAñadirReto, onToast }) {
                 <span style={{ fontSize: '28px' }}>{reto.emoji}</span>
                 <div style={{ flex: 1 }}>
                   <p className="reto-titulo">{reto.titulo}</p>
-                  <p className="reto-dias">
+                  {reto.descripcion && (
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: '1.4' }}>
+                      {reto.descripcion}
+                    </p>
+                  )}
+                  <p className="reto-dias" style={{ marginTop: '4px' }}>
                     {reto.dias} {t('amigos.dias')}
                     {tab === 'populares' && reto.numParticipantes > 0 && ` · ${reto.numParticipantes} ${t('descubrir.participantes')}`}
                     {tab === 'amigos' && reto.creador && ` · @${reto.creador.username}`}

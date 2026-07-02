@@ -79,7 +79,7 @@ Los retos deben sentirse actuales y relevantes para lo que vive la gente ahora m
 Apropiados para todas las edades, sin connotaciones políticas, religiosas, sexuales o violentas.
 Cada uno: título corto y motivador, emoji representativo, duración en días (7, 14, 21 o 30).
 Responde ÚNICAMENTE con un array JSON válido, sin texto extra, sin markdown.
-Formato: [{ "emoji": "🌊", "titulo": "Nada 20 minutos cada día", "dias": 14 }]`
+Formato: [{ "emoji": "🌊", "titulo": "Nada 20 minutos cada día", "descripcion": "Mejora tu resistencia y refréscate este verano", "dias": 14 }]`
     : `Generate exactly 6 habit challenges for the month of ${mes} (day ${dia}), in the middle of ${estacion === 'verano' ? 'summer' : estacion === 'invierno' ? 'winter' : estacion === 'primavera' ? 'spring' : 'autumn'}.
 
 Consider the current context: time of year, upcoming holidays, popular events in ${mes}, seasonal wellness trends. For example in summer: hydration, outdoor activities, beach. In December: rest, year reflection, resolutions. In January: new habits, exercise. In spring: nature, energy.
@@ -88,7 +88,7 @@ Challenges should feel current and relevant to what people are experiencing righ
 Appropriate for all ages, no political, religious, sexual or violent connotations.
 Each one: short motivating title, representative emoji, duration in days (7, 14, 21 or 30).
 Reply ONLY with a valid JSON array, no extra text, no markdown.
-Format: [{ "emoji": "🌊", "titulo": "Swim 20 minutes every day", "dias": 14 }]`
+Format: [{ "emoji": "🌻", "titulo": "Take care of a plant daily", "descripcion": "Connect with nature and nurture something alive", "dias": 21 }]`
 
   const response = await fetch(GROQ_ENDPOINT, {
     method: 'POST',
