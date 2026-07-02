@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../services/supabase'
 import logo from '../../assets/logo3.png'
+import { Browser } from '@capacitor/browser'
 
 function Login({ onLogin }) {
   const { t } = useTranslation()
+  const browserAbiertoRef = useRef(false)
+  const onLoginRef = useRef(onLogin)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [esRegistro, setEsRegistro] = useState(false)
@@ -12,9 +15,21 @@ function Login({ onLogin }) {
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    onLoginRef.current = onLogin
+  }, [onLogin])
+
+  useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        onLogin(session.user)
+        if (browserAbiertoRef.current) {
+          browserAbiertoRef.current = false
+          Browser.close().catch(() => {})
+        }
+        onLoginRef.current(session.user)
+      }
+
+      if (event === 'SIGNED_OUT') {
+        browserAbiertoRef.current = false
       }
     })
     return () => listener.subscription.unsubscribe()
@@ -48,14 +63,44 @@ function Login({ onLogin }) {
     }
   }
 
+
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    setCargando(true)
+    setError(null)
+    browserAbiertoRef.current = true
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'com.hoylo.app://login'
+        redirectTo: 'com.hoylo.app://login',
+        skipBrowserRedirect: true
       }
     })
-    if (error) console.error('Error Google login:', error)
+
+    if (error) {
+      browserAbiertoRef.current = false
+      setCargando(false)
+      console.error('Error Google login:', error)
+      setError('No se pudo iniciar sesión con Google. Inténtalo de nuevo.')
+      return
+    }
+
+    if (data?.url) {
+      try {
+        if (window.Capacitor?.isNativePlatform()) {
+          await Browser.open({ url: data.url })
+        } else {
+          window.open(data.url, '_blank', 'noopener,noreferrer')
+        }
+      } catch (e) {
+        browserAbiertoRef.current = false
+        setCargando(false)
+        setError('No se pudo abrir la ventana de Google. Inténtalo de nuevo.')
+      }
+    } else {
+      browserAbiertoRef.current = false
+      setCargando(false)
+    }
   }
 
   return (
