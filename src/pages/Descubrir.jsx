@@ -76,7 +76,6 @@ function Descubrir({ usuario, onAñadirReto, onToast }) {
                     {reto.dias} {t('amigos.dias')}
                     {tab === 'populares' && reto.numParticipantes > 0 && ` · ${reto.numParticipantes} ${t('descubrir.participantes')}`}
                     {tab === 'amigos' && reto.creador && ` · @${reto.creador.username}`}
-                    {tab === 'ia' && ` · ${t('descubrir.sugeridoPorIA')}`}
                   </p>
                 </div>
               </div>
