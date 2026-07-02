@@ -103,18 +103,37 @@ function App() {
     }
   }
 
-  const guardarPerfilInicial = async (retos, idiomaActual) => {
+  const guardarPerfilInicial = async (idiomaActual) => {
     const perfilData = respuestas.perfil || {}
     const aficiones = respuestas.aficiones || []
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    await supabase
+
+    let session = null
+    let intentos = 0
+    while (!session && intentos < 10) {
+      const { data } = await supabase.auth.getSession()
+      session = data.session
+      if (!session) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+        intentos++
+      }
+    }
+
+    if (!session) {
+      console.error('No se pudo obtener la sesión')
+      return null
+    }
+
+    const { error } = await supabase
       .from('perfiles')
       .upsert({
-        id: usuario.id,
+        id: session.user.id,
         ...perfilData,
         aficiones,
         idioma: idiomaActual
       }, { onConflict: 'id' })
+
+    if (error) console.error('Error guardando perfil:', error)
+    return session
   }
 
   useEffect(() => {
@@ -178,12 +197,11 @@ function App() {
   }
 
   const toggleDark = () => {
-  const nuevo = !darkMode
-  console.log('toggleDark llamado, nuevo valor:', nuevo)
-  setDarkMode(nuevo)
-  localStorage.setItem('darkMode', String(nuevo))
-  document.documentElement.setAttribute('data-theme', nuevo ? 'dark' : 'light')
-}
+    const nuevo = !darkMode
+    setDarkMode(nuevo)
+    localStorage.setItem('darkMode', nuevo)
+    document.documentElement.setAttribute('data-theme', nuevo ? 'dark' : 'light')
+  }
 
   const toggleIdioma = () => {
     const nuevo = idioma === 'es' ? 'en' : 'es'
@@ -222,11 +240,12 @@ function App() {
               respuestas={respuestas}
               onBack={anterior}
               onFin={async (retos) => {
-                await guardarPerfilInicial(retos, idioma)
+                const session = await guardarPerfilInicial(idioma)
+                if (!session) return
                 for (const reto of retos) {
-                  await guardarReto(usuario.id, reto)
+                  await guardarReto(session.user.id, reto)
                 }
-                const retosGuardados = await cargarRetos(usuario.id)
+                const retosGuardados = await cargarRetos(session.user.id)
                 setRetosUsuario(retosGuardados)
                 siguiente()
               }}
