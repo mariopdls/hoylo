@@ -65,7 +65,7 @@ function Login({ onLogin }) {
 
   return (
     <div className="onboarding-screen">
-      <div className="onboarding-logo">
+      <div className="onboarding-logo" style={{ textAlign: 'center' }}>
         <img src={logo} alt="Hoylo" />
       </div>
 
