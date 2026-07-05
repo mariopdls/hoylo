@@ -43,7 +43,6 @@ function Login({ onLogin }) {
         return
       }
 
-      // Supabase devuelve identities vacío cuando el email ya está registrado
       if (data?.user?.identities?.length === 0) {
         setError('Este correo ya tiene una cuenta. Inicia sesión.')
         return
