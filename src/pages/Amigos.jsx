@@ -76,12 +76,14 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
   }
 
   const handleAceptarSolicitudReto = async (sol) => {
-    await aceptarSolicitudReto(sol.id, sol.reto_id, sol.usuario_id)
-    setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
+  await aceptarSolicitudReto(sol.id, sol.reto_id, sol.usuario_id)
+  setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
+  setTimeout(() => {
     onRecargarRetos()
-    setTimeout(() => onRecargarNotificaciones?.(), 1000)
-    onToast?.(t('toast.usuarioAñadido'))
-  }
+    onRecargarNotificaciones?.()
+  }, 1000)
+  onToast?.(t('toast.usuarioAñadido'))
+}
 
   const handleRechazarSolicitudReto = async (sol) => {
     await rechazarSolicitudReto(sol.id)
