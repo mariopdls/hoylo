@@ -60,7 +60,6 @@ Exact format:
   const data = await response.json()
   console.log('Respuesta groq:', data)
   const texto = data.choices[0].message.content
-  const texto = data.choices[0].message.content
   return JSON.parse(texto)
 }
 
