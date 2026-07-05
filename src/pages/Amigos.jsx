@@ -47,14 +47,14 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
     await aceptarInvitacion(inv.id, inv.reto_id, usuario.id)
     setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
     onRecargarRetos()
-    onRecargarNotificaciones?.()
+    setTimeout(() => onRecargarNotificaciones?.(), 1000)
     onToast?.(t('toast.teUniste'))
   }
 
   const handleRechazarReto = async (inv) => {
     await rechazarInvitacion(inv.id)
     setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
-    onRecargarNotificaciones?.()
+    setTimeout(() => onRecargarNotificaciones?.(), 1000)
     onToast?.(t('toast.invitacionRechazada'))
   }
 
@@ -63,7 +63,7 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
     setSolicitudesAmistad(prev => prev.filter(s => s.id !== sol.id))
     const amigosLista = await cargarAmigos()
     setAmigos(amigosLista)
-    onRecargarNotificaciones?.()
+    setTimeout(() => onRecargarNotificaciones?.(), 1000)
     onToast?.(t('toast.ahoraAmigos'))
     setTab('amigos')
   }
@@ -71,7 +71,7 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
   const handleRechazarAmistad = async (sol) => {
     await rechazarSolicitudAmistad(sol.id)
     setSolicitudesAmistad(prev => prev.filter(s => s.id !== sol.id))
-    onRecargarNotificaciones?.()
+    setTimeout(() => onRecargarNotificaciones?.(), 1000)
     onToast?.(t('toast.solicitudRechazada'))
   }
 
@@ -79,14 +79,14 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
     await aceptarSolicitudReto(sol.id, sol.reto_id, sol.usuario_id)
     setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
     onRecargarRetos()
-    onRecargarNotificaciones?.()
+    setTimeout(() => onRecargarNotificaciones?.(), 1000)
     onToast?.(t('toast.usuarioAñadido'))
   }
 
   const handleRechazarSolicitudReto = async (sol) => {
     await rechazarSolicitudReto(sol.id)
     setSolicitudesReto(prev => prev.filter(s => s.id !== sol.id))
-    onRecargarNotificaciones?.()
+    setTimeout(() => onRecargarNotificaciones?.(), 1000)
     onToast?.(t('toast.solicitudRechazada'))
   }
 
@@ -268,7 +268,7 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
                         </div>
                         <div>
                           <p className="reto-titulo">{u.nombre}</p>
-                          <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{u.username}</p>
+                          <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{u.nombre}</p>
                         </div>
                       </div>
                       <button className="btn-añadir" style={{ width: '32px', height: '32px', fontSize: '14px' }} onClick={() => handleSolicitarDesdeResultado(u)}>

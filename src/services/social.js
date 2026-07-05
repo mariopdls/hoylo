@@ -73,13 +73,22 @@ export async function cargarInvitacionesPendientes(username) {
 }
 
 export async function aceptarInvitacion(invitacionId, retoId, usuarioId) {
-  await supabase
+  const { data: yaParticipa } = await supabase
     .from('participantes_reto')
-    .insert({
-      reto_id: retoId,
-      usuario_id: usuarioId,
-      rol: 'participante'
-    })
+    .select('id')
+    .eq('reto_id', retoId)
+    .eq('usuario_id', usuarioId)
+    .maybeSingle()
+
+  if (!yaParticipa) {
+    await supabase
+      .from('participantes_reto')
+      .insert({
+        reto_id: retoId,
+        usuario_id: usuarioId,
+        rol: 'participante'
+      })
+  }
 
   await supabase
     .from('invitaciones')
@@ -270,13 +279,22 @@ export async function cargarSolicitudesReto() {
 }
 
 export async function aceptarSolicitudReto(solicitudId, retoId, usuarioId) {
-  await supabase
+  const { data: yaParticipa } = await supabase
     .from('participantes_reto')
-    .insert({
-      reto_id: retoId,
-      usuario_id: usuarioId,
-      rol: 'participante'
-    })
+    .select('id')
+    .eq('reto_id', retoId)
+    .eq('usuario_id', usuarioId)
+    .maybeSingle()
+
+  if (!yaParticipa) {
+    await supabase
+      .from('participantes_reto')
+      .insert({
+        reto_id: retoId,
+        usuario_id: usuarioId,
+        rol: 'participante'
+      })
+  }
 
   await supabase
     .from('solicitudes_reto')
