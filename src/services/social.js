@@ -18,12 +18,25 @@ export async function invitarAmigo(retoId, username) {
 
   if (yaParticipa) return { error: 'Este usuario ya participa en el reto' }
 
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data: invitacionExistente } = await supabase
+    .from('invitaciones')
+    .select('id')
+    .eq('reto_id', retoId)
+    .eq('para_username', username)
+    .eq('estado', 'pendiente')
+    .maybeSingle()
+
+  if (invitacionExistente) return { error: 'Ya enviaste una invitación a este usuario' }
+
   const { error } = await supabase
     .from('invitaciones')
     .insert({
       reto_id: retoId,
       para_username: username,
-      de_usuario_id: (await supabase.auth.getUser()).data.user.id
+      de_usuario_id: user.id,
+      estado: 'pendiente'
     })
 
   if (error) return { error: 'Error al enviar la invitación' }
@@ -146,7 +159,8 @@ export async function enviarSolicitudAmistad(usernameDestino) {
     .from('solicitudes_amistad')
     .insert({
       de_usuario_id: user.id,
-      para_usuario_id: perfilDestino.id
+      para_usuario_id: perfilDestino.id,
+      estado: 'pendiente'
     })
 
   if (error) return { error: 'Error al enviar la solicitud' }

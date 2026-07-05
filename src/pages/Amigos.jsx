@@ -65,6 +65,7 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
     setAmigos(amigosLista)
     onRecargarNotificaciones?.()
     onToast?.(t('toast.ahoraAmigos'))
+    setTab('amigos')
   }
 
   const handleRechazarAmistad = async (sol) => {
@@ -296,13 +297,13 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
       )}
 
       {amigoSeleccionado && createPortal(
-      <PerfilAmigo
-        amigoId={amigoSeleccionado}
-        onVolver={() => setAmigoSeleccionado(null)}
-        retosUsuario={retosUsuario}
-      />,
-      document.body
-    )}
+        <PerfilAmigo
+          amigoId={amigoSeleccionado}
+          onVolver={() => setAmigoSeleccionado(null)}
+          retosUsuario={retosUsuario}
+        />,
+        document.body
+      )}
     </div>
   )
 }
