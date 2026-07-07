@@ -34,6 +34,14 @@
   z-index: 2;
 }
 
+/* Fallback para navegadores sin View Transitions (p. ej. Firefox):
+   sin círculo, pero al menos un fundido suave en vez de un cambio brusco. */
+@supports not (view-transition-name: none) {
+  *, *::before, *::after {
+    transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease;
+  }
+}
+
 /* ============================================
    DESIGN TOKENS
    ============================================ */

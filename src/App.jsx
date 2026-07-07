@@ -224,8 +224,16 @@ function App() {
       return
     }
 
-    const x = e.clientX
-    const y = e.clientY
+    // e.detail === 0 indica activación por teclado (Enter/Espacio), sin coordenadas de ratón reales
+    let x, y
+    if (e.detail === 0 && e.currentTarget) {
+      const rect = e.currentTarget.getBoundingClientRect()
+      x = rect.left + rect.width / 2
+      y = rect.top + rect.height / 2
+    } else {
+      x = e.clientX
+      y = e.clientY
+    }
     const radio = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
 
     const transicion = document.startViewTransition(aplicarCambio)
