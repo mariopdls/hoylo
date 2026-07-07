@@ -175,30 +175,11 @@ function App() {
   }
 
   useEffect(() => {
-    let activo = true
-
-    const inicializar = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      const user = session?.user ?? null
-      if (!activo) return
-      setUsuario(user)
-      if (user) {
-        try {
-          await cargarPerfilYRetos(user)
-        } catch (err) {
-          console.error('Error cargando perfil:', err)
-        }
-      }
-      if (activo) setCargandoAuth(false)
-    }
-
-    inicializar()
-
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       const user = session?.user ?? null
       setUsuario(user)
 
-      if (event === 'SIGNED_IN' && user) {
+      if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && user) {
         setCargandoAuth(true)
         try {
           await cargarPerfilYRetos(user)
@@ -207,6 +188,11 @@ function App() {
           mostrarToast('No se pudo cargar tu perfil, inténtalo de nuevo', 'error')
         }
         setCargandoAuth(false)
+        return
+      }
+
+      if (event === 'INITIAL_SESSION' && !user) {
+        setCargandoAuth(false)
       }
 
       if (event === 'SIGNED_OUT') {
@@ -214,11 +200,11 @@ function App() {
         setRespuestas({})
         setRetosUsuario([])
         setNotificacionesPendientes(0)
+        setCargandoAuth(false)
       }
     })
 
     return () => {
-      activo = false
       listener.subscription.unsubscribe()
     }
   }, [])
