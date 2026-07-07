@@ -29,6 +29,7 @@ Reglas:
 - Si tiene poca constancia, retos cortos de 7 días máximo
 - Cada reto debe tener: título corto, emoji representativo y duración en días
 - Tono cercano y sin presión
+- Escribe TODOS los títulos en español correcto y natural, sin mezclar palabras de otros idiomas ni anglicismos
 - Responde ÚNICAMENTE con un array JSON válido, sin texto extra, sin markdown
 
 Formato exacto:
@@ -50,6 +51,7 @@ Rules:
 - If low consistency, max 7-day challenges
 - Each challenge must have: short title, representative emoji and duration in days
 - Friendly tone, no pressure
+- Write ALL titles in natural, correct English, without mixing in words from other languages
 - Reply ONLY with a valid JSON array, no extra text, no markdown
 
 Exact format:
@@ -84,11 +86,13 @@ export async function generarRetosDelMomento(idioma = 'es') {
     ? `Genera exactamente 6 retos de hábitos saludables y positivos adecuados para el mes de ${mes}, en plena ${estacion}.
 Los retos deben ser apropiados para todas las edades, completamente seguros, sin ninguna connotación política, religiosa, sexual, violenta u ofensiva.
 Cada uno debe tener: título corto, emoji representativo y duración en días (7, 14, 21 o 30).
+IMPORTANTE: escribe TODOS los títulos en español correcto y natural. No mezcles palabras de otros idiomas (nada de inglés, francés, etc.) ni anglicismos.
 Responde ÚNICAMENTE con un array JSON válido, sin texto extra, sin markdown.
 Formato: [{ "emoji": "🌻", "titulo": "Cuida una planta cada día", "dias": 21 }]`
     : `Generate exactly 6 healthy and positive habit challenges suitable for the month of ${mes}.
 Challenges must be appropriate for all ages, completely safe, with no political, religious, sexual, violent, or offensive connotations.
 Each one must have: short title, representative emoji, and duration in days (7, 14, 21, or 30).
+IMPORTANT: write ALL titles in natural, correct English. Do not mix in words from other languages.
 Reply ONLY with a valid JSON array, no extra text, no markdown.
 Format: [{ "emoji": "🌻", "titulo": "Take care of a plant daily", "dias": 21 }]`
 
