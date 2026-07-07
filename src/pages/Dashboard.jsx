@@ -454,7 +454,7 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
           <div style={{ padding: '32px 40px', overflowY: 'auto' }}>
             <Descubrir
               usuario={usuario}
-              onAñadirReto={(reto) => { onNuevoReto(reto); cargarDatos() }}
+              onAñadirReto={async (reto) => { await onNuevoReto(reto); cargarDatos() }}
               onToast={onToast}
             />
           </div>
@@ -490,7 +490,7 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
       {modalNuevoAbierto && (
         <ModalNuevoReto
           onCerrar={() => setModalNuevoAbierto(false)}
-          onAñadir={(reto) => { onNuevoReto(reto); cargarDatos() }}
+          onAñadir={async (reto) => { await onNuevoReto(reto); cargarDatos() }}
         />
       )}
 
@@ -498,8 +498,8 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
         <ModalEliminarReto
           reto={retoAEliminar}
           onCerrar={() => setRetoAEliminar(null)}
-          onConfirmar={() => {
-            onEliminarReto(retoAEliminar.id)
+          onConfirmar={async () => {
+            await onEliminarReto(retoAEliminar.id)
             setRetoAEliminar(null)
             cargarDatos()
           }}
