@@ -143,11 +143,9 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario, onToast }) {
               <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>{perfil.nombre}</h2>
               <p className="reto-dias">@{perfil.username}</p>
             </div>
-            {perfil.bio && (
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center', maxWidth: '280px', lineHeight: '1.5' }}>
-                "{perfil.bio}"
-              </p>
-            )}
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center', maxWidth: '280px', lineHeight: '1.5' }}>
+              "{perfil.bio || '¡Hola! Estoy utilizando Hoylo'}"
+            </p>
           </div>
 
           {/* Stats */}

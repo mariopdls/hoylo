@@ -463,6 +463,10 @@ body {
   animation: fadeInScale 0.15s ease;
 }
 
+.btn-dias-activo:hover {
+  color: white;
+}
+
 .btn-volver {
   background: var(--bg-secondary);
   border: 1px solid var(--border);

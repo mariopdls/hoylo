@@ -156,8 +156,8 @@ function Perfil({ usuario, onToast }) {
                 rows={2}
                 style={{ borderRadius: '12px', resize: 'none', border: 'none', padding: '0', boxShadow: 'none', fontFamily: 'var(--font-base)', fontSize: '14px' }}
               />
-            : <p className="perfil-valor" style={{ fontStyle: perfil.bio ? 'italic' : 'normal', color: perfil.bio ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                {perfil.bio || '—'}
+            : <p className="perfil-valor" style={{ fontStyle: 'italic', color: perfil.bio ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                {perfil.bio || '¡Hola! Estoy utilizando Hoylo'}
               </p>
           }
         </div>
