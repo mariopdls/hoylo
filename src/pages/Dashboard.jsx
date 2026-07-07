@@ -1,45 +1,75 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { createPortal } from 'react-dom'
 import { supabase } from '../services/supabase'
 import { cargarRetos } from '../services/retos'
-import { cargarAmigos } from '../services/social'
+import { cargarAmigos, cargarActividadAmigos } from '../services/social'
 import { calcularRachaVigente } from '../services/racha'
+import ModalNuevoReto from '../components/ModalNuevoReto'
+import ModalEliminarReto from '../components/ModalEliminarReto'
+import DetalleReto from './DetalleReto'
 import Amigos from './Amigos'
 import Descubrir from './Descubrir'
 import Perfil from './Perfil'
 import logo from '../assets/logo3.png'
 
-function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onToast, idioma, onToggleIdioma, darkMode, onToggleDark, notificacionesPendientes }) {
+function HeatmapReto({ reto }) {
+  const completados = reto.dias_completados || 0
+  const casillas = Array.from({ length: reto.dias }, (_, i) => i < completados)
+  const terminado = completados >= reto.dias
+
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+      {casillas.map((hecho, i) => (
+        <div key={i} style={{
+          width: '10px', height: '10px', borderRadius: '3px',
+          background: hecho ? (terminado ? '#3B6D11' : 'var(--accent)') : 'var(--bg-secondary)',
+          border: hecho ? 'none' : '1px solid var(--border)'
+        }} />
+      ))}
+    </div>
+  )
+}
+
+function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onToast, onToggleIdioma, darkMode, onToggleDark, notificacionesPendientes }) {
+  const { t } = useTranslation()
   const [retos, setRetos] = useState([])
   const [amigos, setAmigos] = useState([])
+  const [actividadAmigos, setActividadAmigos] = useState([])
   const [perfil, setPerfil] = useState(null)
   const [tab, setTab] = useState('inicio')
   const [cargando, setCargando] = useState(true)
+  const [modalNuevoAbierto, setModalNuevoAbierto] = useState(false)
+  const [retoAEliminar, setRetoAEliminar] = useState(null)
+  const [retoDetalle, setRetoDetalle] = useState(null)
 
   useEffect(() => { cargarDatos() }, [])
 
   const cargarDatos = async () => {
-    const [retosData, amigosData, perfilData] = await Promise.all([
+    const [retosData, amigosData, actividadData, perfilData] = await Promise.all([
       cargarRetos(usuario.id),
       cargarAmigos(),
+      cargarActividadAmigos(),
       supabase.from('perfiles').select('*').eq('id', usuario.id).maybeSingle()
     ])
     setRetos(retosData)
     setAmigos(amigosData)
+    setActividadAmigos(actividadData)
     setPerfil(perfilData.data)
     setCargando(false)
   }
 
   const hora = new Date().getHours()
-  const saludo = hora < 14 ? 'Buenos días' : hora < 21 ? 'Buenas tardes' : 'Buenas noches'
+  const saludo = hora < 14 ? t('dashboardPc.saludoManana') : hora < 21 ? t('dashboardPc.saludoTarde') : t('dashboardPc.saludoNoche')
   const retosPendientes = retos.filter(r => !r.foto_hoy).length
   const rachaVigente = calcularRachaVigente(perfil?.racha_actual, perfil?.racha_ultima_fecha)
 
   const navItems = [
-    { id: 'inicio', icon: 'ti-home', label: 'Inicio' },
-    { id: 'estadisticas', icon: 'ti-chart-bar', label: 'Estadísticas' },
-    { id: 'amigos', icon: 'ti-users', label: 'Amigos' },
-    { id: 'descubrir', icon: 'ti-compass', label: 'Descubrir' },
-    { id: 'perfil', icon: 'ti-user', label: 'Perfil' },
+    { id: 'inicio', icon: 'ti-home', label: t('nav.inicio') },
+    { id: 'estadisticas', icon: 'ti-chart-bar', label: t('nav.estadisticas') },
+    { id: 'amigos', icon: 'ti-users', label: t('nav.amigos') },
+    { id: 'descubrir', icon: 'ti-compass', label: t('nav.descubrir') },
+    { id: 'perfil', icon: 'ti-user', label: t('nav.perfil') },
   ]
 
   const Sidebar = () => (
@@ -119,10 +149,10 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
     }}>
       <div>
         <p style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>
-          Tus amigos ({amigos.length})
+          {t('dashboardPc.tusAmigos')} ({amigos.length})
         </p>
         {amigos.length === 0 ? (
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Sin amigos todavía</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('amigos.sinAmigos')}</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {amigos.map((amigo, i) => (
@@ -152,17 +182,49 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
 
       <div>
         <p style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>
-          Tu progreso
+          {t('dashboardPc.actividadAmigos')}
+        </p>
+        {actividadAmigos.length === 0 ? (
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('dashboardPc.sinActividadAmigos')}</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {actividadAmigos.map((act, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '28px', height: '28px', borderRadius: '50%',
+                  background: 'var(--accent)', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', fontSize: '11px', color: 'white',
+                  fontWeight: '700', overflow: 'hidden', flexShrink: 0
+                }}>
+                  {act.amigo?.avatar_url
+                    ? <img src={act.amigo.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : act.amigo?.nombre?.charAt(0).toUpperCase()
+                  }
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>{act.amigo?.nombre}</strong> {t('dashboardPc.completoHoy', { reto: `${act.emoji} ${act.titulo}` })}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{ height: '1px', background: 'var(--border)' }} />
+
+      <div>
+        <p style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>
+          {t('dashboardPc.tuProgreso')}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Días completados en total</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>{t('dashboardPc.diasCompletadosTotal')}</p>
             <p style={{ fontSize: '24px', fontWeight: '800', color: 'var(--accent)' }}>
               {retos.reduce((acc, r) => acc + (r.dias_completados || 0), 0)}
             </p>
           </div>
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Fotos subidas hoy</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>{t('dashboardPc.fotosSubidasHoy')}</p>
             <p style={{ fontSize: '24px', fontWeight: '800', color: 'var(--accent)' }}>
               {retos.filter(r => r.foto_hoy).length} / {retos.length}
             </p>
@@ -174,6 +236,18 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <button
+          onClick={onToggleIdioma}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border)',
+            background: 'transparent', cursor: 'pointer', fontSize: '13px',
+            color: 'var(--text-secondary)', width: '100%'
+          }}
+        >
+          <i className="ti ti-language" style={{ fontSize: '16px' }}></i>
+          {t('config.cambiarIdioma')}
+        </button>
+        <button
           onClick={onToggleDark}
           style={{
             display: 'flex', alignItems: 'center', gap: '8px',
@@ -183,7 +257,7 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
           }}
         >
           <i className={`ti ${darkMode ? 'ti-sun' : 'ti-moon'}`} style={{ fontSize: '16px' }}></i>
-          {darkMode ? 'Modo claro' : 'Modo oscuro'}
+          {darkMode ? t('config.modoClaro') : t('config.modoOscuro')}
         </button>
         <button
           onClick={() => supabase.auth.signOut()}
@@ -195,7 +269,7 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
           }}
         >
           <i className="ti ti-logout" style={{ fontSize: '16px' }}></i>
-          Cerrar sesión
+          {t('config.cerrarSesion')}
         </button>
       </div>
     </div>
@@ -211,15 +285,15 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
                 {saludo}, <span style={{ color: 'var(--accent)' }}>{perfil?.nombre || 'amigo'}</span> 👋
               </h1>
               <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                {retosPendientes > 0 ? `Tienes ${retosPendientes} reto${retosPendientes > 1 ? 's' : ''} pendiente${retosPendientes > 1 ? 's' : ''} hoy` : '¡Ya completaste todos tus retos de hoy! 🎉'}
+                {retosPendientes > 0 ? t('dashboardPc.pendientes', { count: retosPendientes }) : t('dashboardPc.todoCompletado')}
               </p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               {[
-                { label: 'Racha actual', value: `🔥 ${rachaVigente}`, sub: 'días consecutivos' },
-                { label: 'Mejor racha', value: `⭐ ${perfil?.mejor_racha || 0}`, sub: 'días seguidos' },
-                { label: 'Retos activos', value: retos.length, sub: 'en progreso' },
+                { label: t('dashboardPc.rachaActual'), value: `🔥 ${rachaVigente}`, sub: t('dashboardPc.diasConsecutivos') },
+                { label: t('dashboardPc.mejorRacha'), value: `⭐ ${perfil?.mejor_racha || 0}`, sub: t('dashboardPc.diasSeguidos') },
+                { label: t('dashboardPc.retosActivos'), value: retos.length, sub: t('dashboardPc.enProgreso') },
               ].map((stat, i) => (
                 <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px 20px' }}>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>{stat.label}</p>
@@ -230,28 +304,47 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
             </div>
 
             <div>
-              <p style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>
-                Tus retos de hoy
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <p style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {t('dashboardPc.retosDeHoy')}
+                </p>
+                <button
+                  onClick={() => setModalNuevoAbierto(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    padding: '6px 12px', borderRadius: '8px', border: 'none',
+                    background: 'var(--accent)', color: 'white', cursor: 'pointer',
+                    fontSize: '12px', fontWeight: '600'
+                  }}
+                >
+                  <i className="ti ti-plus" style={{ fontSize: '14px' }}></i>
+                  {t('dashboardPc.nuevoReto')}
+                </button>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {cargando ? (
                   <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Cargando...</p>
                 ) : retos.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '40px', background: 'var(--bg-card)', borderRadius: '14px', border: '1px solid var(--border)' }}>
                     <p style={{ fontSize: '32px', marginBottom: '8px' }}>🎯</p>
-                    <p style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)' }}>Sin retos todavía</p>
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>Crea tu primer reto y empieza a construir hábitos</p>
+                    <p style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)' }}>{t('dashboardPc.sinRetosTitulo')}</p>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{t('dashboardPc.sinRetosTexto')}</p>
                   </div>
                 ) : (
                   retos.map((reto, i) => {
                     const progreso = Math.round(((reto.dias_completados || 0) / reto.dias) * 100)
+                    const esAdmin = reto.usuario_id === usuario.id
                     return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '14px' }}>
+                      <div
+                        key={reto.id || i}
+                        onClick={() => setRetoDetalle(i)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '14px', cursor: 'pointer' }}
+                      >
                         <span style={{ fontSize: '26px' }}>{reto.emoji}</span>
                         <div style={{ flex: 1 }}>
                           <p style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)' }}>{reto.titulo}</p>
                           <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                            Día {reto.dia_actual || 1} de {reto.dias} · {progreso}% completado
+                            {t('detalle.dia')} {reto.dia_actual || 1} {t('detalle.de')} {reto.dias} · {progreso}%
                           </p>
                           <div style={{ height: '4px', background: 'var(--border)', borderRadius: '2px', marginTop: '8px' }}>
                             <div style={{ height: '100%', width: `${progreso}%`, background: 'var(--accent)', borderRadius: '2px', transition: 'width 0.5s ease' }} />
@@ -266,6 +359,19 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
                           <i className={`ti ${reto.foto_hoy ? 'ti-check' : 'ti-camera'}`}
                             style={{ fontSize: '15px', color: reto.foto_hoy ? '#3B6D11' : 'var(--text-muted)' }} />
                         </div>
+                        {esAdmin && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setRetoAEliminar(reto) }}
+                            style={{
+                              width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+                              background: 'transparent', border: '1px solid var(--border)', cursor: 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)'
+                            }}
+                            aria-label={t('eliminar.confirmar')}
+                          >
+                            <i className="ti ti-trash" style={{ fontSize: '15px' }}></i>
+                          </button>
+                        )}
                       </div>
                     )
                   })
@@ -279,18 +385,18 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
         return (
           <div style={{ padding: '32px 40px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '28px' }}>
             <div>
-              <h1 style={{ fontSize: '26px', fontWeight: '800', color: 'var(--text-primary)' }}>Estadísticas</h1>
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>Tu progreso acumulado</p>
+              <h1 style={{ fontSize: '26px', fontWeight: '800', color: 'var(--text-primary)' }}>{t('dashboardPc.estadisticasTitulo')}</h1>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>{t('dashboardPc.progresoAcumulado')}</p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               {[
-                { label: 'Racha actual', value: `🔥 ${rachaVigente}`, sub: 'días consecutivos' },
-                { label: 'Mejor racha', value: `⭐ ${perfil?.mejor_racha || 0}`, sub: 'tu récord personal' },
-                { label: 'Días totales', value: retos.reduce((acc, r) => acc + (r.dias_completados || 0), 0), sub: 'días completados' },
-                { label: 'Retos activos', value: retos.length, sub: 'en progreso ahora' },
-                { label: 'Fotos hoy', value: `${retos.filter(r => r.foto_hoy).length} / ${retos.length}`, sub: 'subidas hoy' },
-                { label: 'Retos terminados', value: retos.filter(r => r.dias_completados >= r.dias).length, sub: 'completados al 100%' },
+                { label: t('dashboardPc.rachaActual'), value: `🔥 ${rachaVigente}`, sub: t('dashboardPc.diasConsecutivos') },
+                { label: t('dashboardPc.mejorRacha'), value: `⭐ ${perfil?.mejor_racha || 0}`, sub: t('dashboardPc.diasSeguidos') },
+                { label: t('dashboardPc.diasTotales'), value: retos.reduce((acc, r) => acc + (r.dias_completados || 0), 0), sub: t('dashboardPc.diasCompletadosSub') },
+                { label: t('dashboardPc.retosActivos'), value: retos.length, sub: t('dashboardPc.enProgresoAhora') },
+                { label: t('dashboardPc.fotosHoy'), value: `${retos.filter(r => r.foto_hoy).length} / ${retos.length}`, sub: t('dashboardPc.subidasHoy') },
+                { label: t('dashboardPc.retosTerminados'), value: retos.filter(r => r.dias_completados >= r.dias).length, sub: t('dashboardPc.completadosAl100') },
               ].map((stat, i) => (
                 <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px 20px' }}>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>{stat.label}</p>
@@ -302,28 +408,26 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
 
             <div>
               <p style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>
-                Progreso por reto
+                {t('dashboardPc.progresoPorReto')}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {retos.map((reto, i) => {
                   const progreso = Math.round(((reto.dias_completados || 0) / reto.dias) * 100)
                   return (
-                    <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px 20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                    <div key={reto.id || i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                         <span style={{ fontSize: '22px' }}>{reto.emoji}</span>
                         <div style={{ flex: 1 }}>
                           <p style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>{reto.titulo}</p>
                           <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                            {reto.dias_completados || 0} de {reto.dias} días
+                            {reto.dias_completados || 0} {t('detalle.de')} {reto.dias} · {t('amigos.dias')}
                           </p>
                         </div>
                         <span style={{ fontSize: '13px', fontWeight: '700', color: progreso === 100 ? '#3B6D11' : 'var(--accent)' }}>
                           {progreso}%
                         </span>
                       </div>
-                      <div style={{ height: '6px', background: 'var(--border)', borderRadius: '3px' }}>
-                        <div style={{ height: '100%', width: `${progreso}%`, background: progreso === 100 ? '#3B6D11' : 'var(--accent)', borderRadius: '3px', transition: 'width 0.5s ease' }} />
-                      </div>
+                      <HeatmapReto reto={reto} />
                     </div>
                   )
                 })}
@@ -382,6 +486,36 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
       <Sidebar />
       {renderContenido()}
       <PanelDerecho />
+
+      {modalNuevoAbierto && (
+        <ModalNuevoReto
+          onCerrar={() => setModalNuevoAbierto(false)}
+          onAñadir={(reto) => { onNuevoReto(reto); cargarDatos() }}
+        />
+      )}
+
+      {retoAEliminar && (
+        <ModalEliminarReto
+          reto={retoAEliminar}
+          onCerrar={() => setRetoAEliminar(null)}
+          onConfirmar={() => {
+            onEliminarReto(retoAEliminar.id)
+            setRetoAEliminar(null)
+            cargarDatos()
+          }}
+        />
+      )}
+
+      {retoDetalle !== null && retos[retoDetalle] && createPortal(
+        <DetalleReto
+          reto={retos[retoDetalle]}
+          permitirSubirFoto={false}
+          onVolver={() => setRetoDetalle(null)}
+          onActualizar={(retoActualizado) => { onActualizarReto(retoActualizado); cargarDatos() }}
+          onToast={onToast}
+        />,
+        document.body
+      )}
     </div>
   )
 }

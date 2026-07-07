@@ -332,6 +332,29 @@ export async function buscarUsuarios(query) {
   return data || []
 }
 
+export async function cargarActividadAmigos() {
+  const amigos = await cargarAmigos()
+  if (amigos.length === 0) return []
+
+  const hoy = new Date().toISOString().split('T')[0]
+  const amigoIds = amigos.map(a => a.id)
+
+  const { data } = await supabase
+    .from('participantes_reto')
+    .select('usuario_id, retos (emoji, titulo)')
+    .in('usuario_id', amigoIds)
+    .eq('ultima_foto_fecha', hoy)
+
+  if (!data) return []
+
+  const amigosPorId = new Map(amigos.map(a => [a.id, a]))
+
+  return data
+    .filter(p => p.retos)
+    .map(p => ({ amigo: amigosPorId.get(p.usuario_id), emoji: p.retos.emoji, titulo: p.retos.titulo }))
+    .filter(p => p.amigo)
+}
+
 export async function cargarAmigosenComun(otroUsuarioId) {
   const { data: { user } } = await supabase.auth.getUser()
 

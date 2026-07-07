@@ -68,7 +68,7 @@ function CarruselFotos({ participantes }) {
   )
 }
 
-function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
+function DetalleReto({ reto, onVolver, onActualizar, onToast, permitirSubirFoto = true }) {
   const { t } = useTranslation()
   const [editandoTitulo, setEditandoTitulo] = useState(false)
   const [titulo, setTitulo] = useState(reto.titulo)
@@ -378,15 +378,23 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
             <i className="ti ti-send"></i>
           </button>
         </div>
-        <input type="file" accept="image/*" capture="environment" ref={inputFotoRef} style={{ display: 'none' }} onChange={handleFoto} />
-        <button
-          className="btn-principal"
-          style={{ opacity: yaSubioFoto ? 0.5 : 1, cursor: yaSubioFoto || subiendo ? 'not-allowed' : 'pointer' }}
-          disabled={yaSubioFoto || subiendo}
-          onClick={() => inputFotoRef.current.click()}
-        >
-          {subiendo ? '⏳' : yaSubioFoto ? t('detalle.fotoSubida') : t('detalle.subirFoto')}
-        </button>
+        {permitirSubirFoto ? (
+          <>
+            <input type="file" accept="image/*" capture="environment" ref={inputFotoRef} style={{ display: 'none' }} onChange={handleFoto} />
+            <button
+              className="btn-principal"
+              style={{ opacity: yaSubioFoto ? 0.5 : 1, cursor: yaSubioFoto || subiendo ? 'not-allowed' : 'pointer' }}
+              disabled={yaSubioFoto || subiendo}
+              onClick={() => inputFotoRef.current.click()}
+            >
+              {subiendo ? '⏳' : yaSubioFoto ? t('detalle.fotoSubida') : t('detalle.subirFoto')}
+            </button>
+          </>
+        ) : (
+          <button className="btn-principal" style={{ opacity: 0.5, cursor: 'not-allowed' }} disabled>
+            {yaSubioFoto ? t('detalle.fotoSubida') : t('detalle.subirFotoMovil')}
+          </button>
+        )}
       </div>
     </div>
   </div>
