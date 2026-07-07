@@ -1,6 +1,16 @@
+import { supabase } from './supabase'
+
 const GROQ_ENDPOINT = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api/groq`
   : '/api/groq'
+
+async function cabecerasAuth() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return {
+    'Content-Type': 'application/json',
+    ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+  }
+}
 
 export async function generarRetos(respuestas, idioma = 'es') {
   const { racha, mejorar, constancia } = respuestas
@@ -51,7 +61,7 @@ Exact format:
 
   const response = await fetch(GROQ_ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await cabecerasAuth(),
     body: JSON.stringify({
       messages: [{ role: 'user', content: prompt }]
     })
@@ -84,7 +94,7 @@ Format: [{ "emoji": "🌻", "titulo": "Take care of a plant daily", "dias": 21 }
 
   const response = await fetch(GROQ_ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await cabecerasAuth(),
     body: JSON.stringify({
       messages: [{ role: 'user', content: prompt }]
     })

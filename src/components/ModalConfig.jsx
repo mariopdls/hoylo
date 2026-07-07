@@ -244,6 +244,22 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark,
             <i className="ti ti-chevron-right" style={{ color: '#E24B4A' }}></i>
           </div>
 
+          <div className="config-fila" onClick={() => window.open('/terminos.html', '_blank')}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <i className="ti ti-file-text" style={{ fontSize: '20px', color: 'var(--accent)' }}></i>
+              <p className="reto-titulo">Términos y condiciones</p>
+            </div>
+            <i className="ti ti-external-link" style={{ color: 'var(--text-secondary)' }}></i>
+          </div>
+
+          <div className="config-fila" onClick={() => window.open('/privacidad.html', '_blank')}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <i className="ti ti-shield-lock" style={{ fontSize: '20px', color: 'var(--accent)' }}></i>
+              <p className="reto-titulo">Política de privacidad</p>
+            </div>
+            <i className="ti ti-external-link" style={{ color: 'var(--text-secondary)' }}></i>
+          </div>
+
           {confirmEliminar && (
             <div style={{ background: 'var(--bg-secondary)', border: '1px solid #E24B4A', borderRadius: '12px', padding: '14px', marginTop: '4px' }}>
               <p className="guia-texto" style={{ fontSize: '13px', marginBottom: '10px' }}>{t('config.confirmarEliminar')}</p>

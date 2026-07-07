@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { supabase } from '../../services/supabase'
 import logo from '../../assets/logo3.png'
 
 const AFICIONES_BASE_ES = [
@@ -31,9 +32,14 @@ Each one must have an emoji and a short name.
 Reply ONLY with a valid JSON array, no extra text, no markdown.
 Format: ["🎸 Guitar", "🎹 Piano", "🎤 Singing"]`
 
+  const { data: { session } } = await supabase.auth.getSession()
+
   const response = await fetch(GROQ_ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+    },
     body: JSON.stringify({
       messages: [{ role: 'user', content: prompt }]
     })

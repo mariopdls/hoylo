@@ -15,7 +15,7 @@ function obtenerAppFirebase() {
 
 export default async function handler(req, res) {
   const secreto = req.headers.authorization?.replace('Bearer ', '')
-  if (secreto !== process.env.CRON_SECRET) {
+  if (!secreto || !process.env.CRON_SECRET || secreto !== process.env.CRON_SECRET) {
     return res.status(401).json({ error: 'No autorizado' })
   }
 

@@ -137,6 +137,15 @@ function Login() {
         >
           {esRegistro ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
         </button>
+
+        {esRegistro && (
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px', textAlign: 'center', lineHeight: '1.5' }}>
+            Al crear una cuenta aceptas los{' '}
+            <a href="/terminos.html" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>Términos</a>
+            {' '}y la{' '}
+            <a href="/privacidad.html" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>Política de Privacidad</a>.
+          </p>
+        )}
       </div>
 
       <button
