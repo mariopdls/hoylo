@@ -76,9 +76,11 @@ function Descubrir({ usuario, onAñadirReto, onToast }) {
                     {reto.dias} {t('amigos.dias')}
                     {tab === 'populares' && reto.numParticipantes > 0 && ` · ${reto.numParticipantes} ${t('descubrir.participantes')}`}
                     {tab === 'amigos' && reto.creador && ` · @${reto.creador.username}`}
-                    {tab === 'ia' && ` · ${t('descubrir.sugeridoPorIA')}`}
                   </p>
                 </div>
+                {tab === 'ia' && (
+                  <span style={{ fontSize: '15px', opacity: 0.7 }}>✨</span>
+                )}
               </div>
               {tab === 'ia' ? (
                 <button

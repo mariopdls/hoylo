@@ -44,7 +44,11 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
   }
 
   const handleAceptarReto = async (inv) => {
-    await aceptarInvitacion(inv.id, inv.reto_id, usuario.id)
+    const resultado = await aceptarInvitacion(inv.id, inv.reto_id, usuario.id)
+    if (resultado.error) {
+      onToast?.(resultado.error, 'error')
+      return
+    }
     setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
     onRecargarRetos()
     setTimeout(() => onRecargarNotificaciones?.(), 1000)
@@ -52,7 +56,11 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
   }
 
   const handleRechazarReto = async (inv) => {
-    await rechazarInvitacion(inv.id)
+    const resultado = await rechazarInvitacion(inv.id)
+    if (resultado.error) {
+      onToast?.(resultado.error, 'error')
+      return
+    }
     setInvitacionesRetos(prev => prev.filter(i => i.id !== inv.id))
     setTimeout(() => onRecargarNotificaciones?.(), 1000)
     onToast?.(t('toast.invitacionRechazada'))
@@ -260,7 +268,7 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
               {resultadosBusqueda.length > 0 && (
                 <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {resultadosBusqueda.map((u, i) => (
-                    <div key={u.id} className="config-fila" style={{ cursor: 'default', animation: `staggerIn 0.25s ease ${i * 0.04}s both` }}>
+                    <div key={u.id} className="config-fila" style={{ cursor: 'pointer', animation: `staggerIn 0.25s ease ${i * 0.04}s both` }} onClick={() => handleSolicitarDesdeResultado(u)}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div className="participante-avatar" style={{ overflow: 'hidden' }}>
                           {u.avatar_url
@@ -270,10 +278,10 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
                         </div>
                         <div>
                           <p className="reto-titulo">{u.nombre}</p>
-                          <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{u.nombre}</p>
+                          <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{u.username}</p>
                         </div>
                       </div>
-                      <button className="btn-añadir" style={{ width: '32px', height: '32px', fontSize: '14px' }} onClick={() => handleSolicitarDesdeResultado(u)}>
+                      <button className="btn-añadir" style={{ width: '32px', height: '32px', fontSize: '14px' }}>
                         <i className="ti ti-user-plus"></i>
                       </button>
                     </div>
@@ -303,6 +311,7 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
           amigoId={amigoSeleccionado}
           onVolver={() => setAmigoSeleccionado(null)}
           retosUsuario={retosUsuario}
+          onToast={onToast}
         />,
         document.body
       )}

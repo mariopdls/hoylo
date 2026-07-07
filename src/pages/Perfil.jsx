@@ -31,7 +31,15 @@ function Perfil({ usuario, onToast }) {
 
   const guardarPerfil = async () => {
     setGuardando(true)
-    await supabase.from('perfiles').upsert({ ...perfil, id: usuario.id }, { onConflict: 'id' })
+    await supabase.from('perfiles').update({
+      nombre: perfil.nombre,
+      bio: perfil.bio,
+      fecha_nacimiento: perfil.fecha_nacimiento,
+      sexo: perfil.sexo,
+      ciudad: perfil.ciudad,
+      pais: perfil.pais,
+      aficiones: perfil.aficiones
+    }).eq('id', usuario.id)
     setGuardando(false)
     setEditando(false)
     onToast?.(t('toast.perfilGuardado'))

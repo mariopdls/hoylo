@@ -81,32 +81,42 @@ export async function aceptarInvitacion(invitacionId, retoId, usuarioId) {
     .maybeSingle()
 
   if (!yaParticipa) {
-    await supabase
+    const { error: errorParticipante } = await supabase
       .from('participantes_reto')
       .insert({
         reto_id: retoId,
         usuario_id: usuarioId,
         rol: 'participante'
       })
+
+    if (errorParticipante) return { error: errorParticipante.message }
   }
 
-  await supabase
+  const { error } = await supabase
     .from('invitaciones')
     .update({ estado: 'aceptada' })
     .eq('id', invitacionId)
+
+  if (error) return { error: error.message }
+  return { ok: true }
 }
 
 export async function rechazarInvitacion(invitacionId) {
-  await supabase
+  const { error } = await supabase
     .from('invitaciones')
     .update({ estado: 'rechazada' })
     .eq('id', invitacionId)
+
+  if (error) return { error: error.message }
+  return { ok: true }
 }
 
 export async function cargarParticipantes(retoId) {
+  const hoy = new Date().toISOString().split('T')[0]
+
   const { data } = await supabase
     .from('participantes_reto')
-    .select('id, rol, foto_hoy, foto_url, dias_completados, usuario_id')
+    .select('id, rol, ultima_foto_fecha, foto_url, dias_completados, usuario_id')
     .eq('reto_id', retoId)
 
   if (!data) return []
@@ -118,7 +128,7 @@ export async function cargarParticipantes(retoId) {
         .select('nombre, username, avatar_url')
         .eq('id', p.usuario_id)
         .maybeSingle()
-      return { ...p, perfiles: perfil }
+      return { ...p, foto_hoy: p.ultima_foto_fecha === hoy, perfiles: perfil }
     })
   )
 

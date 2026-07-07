@@ -388,6 +388,7 @@ function App() {
               onToggleIdioma={toggleIdioma}
               darkMode={darkMode}
               onToggleDark={toggleDark}
+              onToast={mostrarToast}
             />
           )}
 

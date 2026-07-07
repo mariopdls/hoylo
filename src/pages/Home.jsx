@@ -69,12 +69,12 @@ function RetoCard({ reto, onEliminar, onAbrir, esAdmin }) {
         </div>
         <div className="reto-progreso">
           <svg width="36" height="36" viewBox="0 0 36 36">
-            <circle cx="18" cy="18" r="15" fill="none" stroke="#E8C97A" strokeWidth="3"/>
-            <circle cx="18" cy="18" r="15" fill="none" stroke="#F5A623" strokeWidth="3"
+            <circle cx="18" cy="18" r="15" fill="none" stroke="var(--border)" strokeWidth="3"/>
+            <circle cx="18" cy="18" r="15" fill="none" stroke="var(--accent)" strokeWidth="3"
               strokeDasharray={`${Math.round(((reto.dias_completados || 0) / reto.dias) * 94)} 94`}
               strokeLinecap="round" transform="rotate(-90 18 18)"
             />
-            <text x="18" y="22" textAnchor="middle" fontSize="10" fill="#BA7517">
+            <text x="18" y="22" textAnchor="middle" fontSize="10" fill="var(--text-accent)">
               {Math.round(((reto.dias_completados || 0) / reto.dias) * 100)}%
             </text>
           </svg>

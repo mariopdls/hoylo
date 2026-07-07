@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { actualizarTituloReto, completarDia } from '../services/retos'
 import { subirFoto } from '../services/cloudinary'
-import { cargarParticipantes, invitarAmigo } from '../services/social'
+import { cargarParticipantes, invitarAmigo, cargarAmigos } from '../services/social'
 import { cargarComentarios, enviarComentario, eliminarComentario } from '../services/comentarios'
 import { supabase } from '../services/supabase'
 
@@ -78,6 +78,8 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
   const [participantes, setParticipantes] = useState([])
   const [mostrarInvitar, setMostrarInvitar] = useState(false)
   const [usernameInvitar, setUsernameInvitar] = useState('')
+  const [amigos, setAmigos] = useState([])
+  const [sugerenciasInvitar, setSugerenciasInvitar] = useState([])
   const [usuarioActualId, setUsuarioActualId] = useState(null)
   const [comentarios, setComentarios] = useState([])
   const [nuevoComentario, setNuevoComentario] = useState('')
@@ -96,6 +98,8 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
     setUsuarioActualId(user.id)
     const data = await cargarParticipantes(reto.id)
     setParticipantes(data)
+    const listaAmigos = await cargarAmigos()
+    setAmigos(listaAmigos)
     const coms = await cargarComentarios(reto.id)
     setComentarios(coms)
     const miParticipacion = data.find(p => p.usuario_id === user?.id)
@@ -115,8 +119,13 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
     setSubiendo(true)
     try {
       const url = await subirFoto(archivo)
+      const resultado = await completarDia(reto.id, url)
+      if (resultado.error) {
+        onToast?.(resultado.error, 'error')
+        setSubiendo(false)
+        return
+      }
       setFotoSubida(true)
-      await completarDia(reto.id, url)
       const nuevoDiasCompletados = progresoActual + 1
       setProgresoActual(nuevoDiasCompletados)
       onActualizar({ ...reto, dias_completados: nuevoDiasCompletados, foto_hoy: true })
@@ -128,11 +137,32 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
     setSubiendo(false)
   }
 
-  const handleInvitar = async () => {
-    if (!usernameInvitar.trim()) return
-    const resultado = await invitarAmigo(reto.id, usernameInvitar.trim())
+  const enviarInvitacion = async (username) => {
+    if (!username) return
+    const resultado = await invitarAmigo(reto.id, username)
     onToast?.(resultado.error || t('toast.invitacionEnviada'), resultado.error ? 'error' : 'ok')
-    if (!resultado.error) { setUsernameInvitar(''); setMostrarInvitar(false) }
+    if (!resultado.error) {
+      setUsernameInvitar('')
+      setSugerenciasInvitar([])
+      setMostrarInvitar(false)
+    }
+  }
+
+  const handleInvitar = () => enviarInvitacion(usernameInvitar.trim())
+
+  const handleCambioUsernameInvitar = (valor) => {
+    const limpio = valor.toLowerCase().replace(/[^a-z0-9_]/g, '')
+    setUsernameInvitar(limpio)
+
+    if (!limpio) { setSugerenciasInvitar([]); return }
+
+    const yaParticipan = new Set(participantes.map(p => p.usuario_id))
+    setSugerenciasInvitar(
+      amigos.filter(a =>
+        !yaParticipan.has(a.id) &&
+        (a.username?.toLowerCase().includes(limpio) || a.nombre?.toLowerCase().includes(limpio))
+      )
+    )
   }
 
   const handleEnviarComentario = async () => {
@@ -234,17 +264,44 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast }) {
             </button>
           </div>
           {mostrarInvitar && (
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-            <input
-              className="input-reto"
-              placeholder="@username"
-              value={usernameInvitar}
-              onChange={e => setUsernameInvitar(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-              onKeyDown={e => { if (e.key === 'Enter') handleInvitar() }}
-            />
-            <button className="btn-añadir" onClick={handleInvitar}>
-              <i className="ti ti-send"></i>
-            </button>
+          <div style={{ marginBottom: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                className="input-reto"
+                placeholder="@username"
+                value={usernameInvitar}
+                onChange={e => handleCambioUsernameInvitar(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleInvitar() }}
+              />
+              <button className="btn-añadir" onClick={handleInvitar}>
+                <i className="ti ti-send"></i>
+              </button>
+            </div>
+            {sugerenciasInvitar.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+                {sugerenciasInvitar.map(a => (
+                  <div
+                    key={a.id}
+                    className="config-fila"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => enviarInvitacion(a.username)}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div className="participante-avatar" style={{ overflow: 'hidden' }}>
+                        {a.avatar_url
+                          ? <img src={a.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : a.nombre?.charAt(0).toUpperCase()
+                        }
+                      </div>
+                      <div>
+                        <p className="reto-titulo">{a.nombre}</p>
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>@{a.username}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

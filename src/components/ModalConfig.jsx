@@ -1,16 +1,41 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
 
-function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark }) {
+const CLAVE_NOTIFICACIONES = 'hoylo_notificaciones'
+const CLAVE_HORA_RECORDATORIO = 'hoylo_hora_recordatorio'
+
+function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark, onToast }) {
   const { t } = useTranslation()
   const [confirmEliminar, setConfirmEliminar] = useState(false)
-  const [horaRecordatorio, setHoraRecordatorio] = useState('09:00')
-  const [notificaciones, setNotificaciones] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
+  const [horaRecordatorio, setHoraRecordatorio] = useState(() => localStorage.getItem(CLAVE_HORA_RECORDATORIO) || '09:00')
+  const [notificaciones, setNotificaciones] = useState(() => localStorage.getItem(CLAVE_NOTIFICACIONES) === 'true')
   const [perfilPublico, setPerfilPublico] = useState(true)
   const [mostrarInstrucciones, setMostrarInstrucciones] = useState(false)
+  const timerRef = useRef(null)
 
-  useEffect(() => { cargarConfig() }, [])
+  const programarRecordatorio = (hora) => {
+    clearTimeout(timerRef.current)
+    const [horas, minutos] = hora.split(':').map(Number)
+    const ahora = new Date()
+    const objetivo = new Date()
+    objetivo.setHours(horas, minutos, 0, 0)
+    if (objetivo <= ahora) objetivo.setDate(objetivo.getDate() + 1)
+    const diff = objetivo - ahora
+    timerRef.current = setTimeout(() => {
+      new Notification('Hoylo 🌞', { body: '¡No olvides completar tus retos de hoy!', icon: '/icon-192.png' })
+      programarRecordatorio(hora)
+    }, diff)
+  }
+
+  useEffect(() => {
+    cargarConfig()
+    if (localStorage.getItem(CLAVE_NOTIFICACIONES) === 'true') {
+      programarRecordatorio(localStorage.getItem(CLAVE_HORA_RECORDATORIO) || '09:00')
+    }
+    return () => clearTimeout(timerRef.current)
+  }, [])
 
   const cargarConfig = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -26,23 +51,22 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark 
   }
 
   const handleEliminarCuenta = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('perfiles').delete().eq('id', user.id)
-    await supabase.from('retos').delete().eq('usuario_id', user.id)
-    await supabase.auth.signOut()
-  }
+    setEliminando(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const respuesta = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/eliminar-cuenta`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    })
 
-  const programarRecordatorio = (hora) => {
-    const [horas, minutos] = hora.split(':').map(Number)
-    const ahora = new Date()
-    const objetivo = new Date()
-    objetivo.setHours(horas, minutos, 0, 0)
-    if (objetivo <= ahora) objetivo.setDate(objetivo.getDate() + 1)
-    const diff = objetivo - ahora
-    setTimeout(() => {
-      new Notification('Hoylo 🌞', { body: '¡No olvides completar tus retos de hoy!', icon: '/icon-192.png' })
-      programarRecordatorio(hora)
-    }, diff)
+    if (respuesta.ok) {
+      await supabase.auth.signOut()
+    } else {
+      setEliminando(false)
+      onToast?.(t('config.errorEliminarCuenta'), 'error')
+    }
   }
 
   const handleNotificaciones = () => {
@@ -50,6 +74,7 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark 
       Notification.requestPermission().then(permiso => {
         if (permiso === 'granted') {
           setNotificaciones(true)
+          localStorage.setItem(CLAVE_NOTIFICACIONES, 'true')
           programarRecordatorio(horaRecordatorio)
         } else {
           setMostrarInstrucciones(true)
@@ -57,6 +82,8 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark 
       })
     } else {
       setNotificaciones(false)
+      localStorage.setItem(CLAVE_NOTIFICACIONES, 'false')
+      clearTimeout(timerRef.current)
     }
   }
 
@@ -107,7 +134,11 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark 
               <input
                 type="time"
                 value={horaRecordatorio}
-                onChange={e => { setHoraRecordatorio(e.target.value); programarRecordatorio(e.target.value) }}
+                onChange={e => {
+                  setHoraRecordatorio(e.target.value)
+                  localStorage.setItem(CLAVE_HORA_RECORDATORIO, e.target.value)
+                  programarRecordatorio(e.target.value)
+                }}
                 style={{ border: 'none', background: 'none', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-base)' }}
               />
             </div>
@@ -168,8 +199,8 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark 
                 <button className="btn-principal" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)', boxShadow: 'none' }} onClick={() => setConfirmEliminar(false)}>
                   {t('config.cancelar')}
                 </button>
-                <button className="btn-principal" style={{ background: '#E24B4A', boxShadow: 'none' }} onClick={handleEliminarCuenta}>
-                  {t('config.eliminar')}
+                <button className="btn-principal" style={{ background: '#E24B4A', boxShadow: 'none' }} onClick={handleEliminarCuenta} disabled={eliminando}>
+                  {eliminando ? '...' : t('config.eliminar')}
                 </button>
               </div>
             </div>
@@ -177,7 +208,7 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark 
 
           <p className="detalle-seccion-titulo" style={{ marginTop: '12px' }}>{t('config.sobre')}</p>
 
-          <div className="config-fila" onClick={(e) => { e.stopPropagation(); console.log('toggle dark'); onToggleDark() }}>
+          <div className="config-fila" style={{ cursor: 'default' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <i className="ti ti-info-circle" style={{ fontSize: '20px', color: 'var(--accent)' }}></i>
               <p className="reto-titulo">{t('config.version')}</p>

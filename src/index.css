@@ -1368,11 +1368,6 @@ select.input-reto {
   }
 }
 
-@keyframes toastIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(0.95); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-}
-
 [data-theme="dark"] .nuevo-reto-banner {
   background: linear-gradient(135deg, rgba(245,166,35,0.12) 0%, rgba(245,166,35,0.06) 100%);
   border-color: rgba(245,166,35,0.4);

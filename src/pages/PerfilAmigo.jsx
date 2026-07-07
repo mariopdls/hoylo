@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { cargarPerfilPublico, contarRetosCompletados, cargarRetosPublicosActivos } from '../services/perfilesPublicos'
 import { cargarAmigosenComun, invitarAmigo } from '../services/social'
 
-function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
+function PerfilAmigo({ amigoId, onVolver, retosUsuario, onToast }) {
   const { t } = useTranslation()
   const [perfil, setPerfil] = useState(null)
   const [retosCount, setRetosCount] = useState(0)
@@ -32,8 +32,12 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario }) {
 
   const handleInvitar = async (retoId) => {
     setInvitando(retoId)
-    await invitarAmigo(retoId, perfil.username)
-    setInvitados(prev => new Set(prev).add(retoId))
+    const resultado = await invitarAmigo(retoId, perfil.username)
+    if (resultado.error) {
+      onToast?.(resultado.error, 'error')
+    } else {
+      setInvitados(prev => new Set(prev).add(retoId))
+    }
     setInvitando(null)
   }
 

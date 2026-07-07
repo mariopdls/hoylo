@@ -1,6 +1,8 @@
 import { supabase } from './supabase'
 
 export async function cargarRetos(usuarioId) {
+  const hoy = new Date().toISOString().split('T')[0]
+
   const { data: retosDirectos } = await supabase
     .from('retos')
     .select('*')
@@ -9,15 +11,28 @@ export async function cargarRetos(usuarioId) {
 
   const { data: participaciones } = await supabase
     .from('participantes_reto')
-    .select('reto_id, retos(*)')
+    .select('reto_id, dias_completados, foto_url, ultima_foto_fecha, retos(*)')
     .eq('usuario_id', usuarioId)
-    .neq('rol', 'admin')
 
-  const retosComoParticipante = participaciones
-    ?.map(p => p.retos)
-    .filter(r => r && !retosDirectos?.find(rd => rd.id === r.id)) || []
+  const misParticipaciones = new Map((participaciones || []).map(p => [p.reto_id, p]))
 
-  return [...(retosDirectos || []), ...retosComoParticipante]
+  const fusionarProgreso = (reto) => {
+    const p = misParticipaciones.get(reto.id)
+    const diasCompletados = p?.dias_completados || 0
+    return {
+      ...reto,
+      dias_completados: diasCompletados,
+      foto_url: p?.foto_url ?? reto.foto_url,
+      foto_hoy: p?.ultima_foto_fecha === hoy,
+      dia_actual: Math.min(diasCompletados + 1, reto.dias)
+    }
+  }
+
+  const retosComoParticipante = (participaciones || [])
+    .map(p => p.retos)
+    .filter(r => r && !retosDirectos?.find(rd => rd.id === r.id))
+
+  return [...(retosDirectos || []), ...retosComoParticipante].map(fusionarProgreso)
 }
 
 export async function guardarReto(usuarioId, reto) {
@@ -69,88 +84,32 @@ export async function actualizarTituloReto(retoId, titulo) {
 }
 
 
-export async function resetearFotosDia() {
-  const { error } = await supabase
-    .from('retos')
-    .update({ foto_hoy: false })
-    .eq('foto_hoy', true)
-
-  if (error) console.error('Error reseteando fotos:', error)
-}
-
-export async function cargarSolicitudesReto() {
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data } = await supabase
-    .from('solicitudes_reto')
-    .select('id, reto_id, usuario_id, estado')
-    .eq('para_admin_id', user.id)
-    .eq('estado', 'pendiente')
-
-  if (!data) return []
-
-  const conDatos = await Promise.all(
-    data.map(async (s) => {
-      const { data: reto } = await supabase
-        .from('retos')
-        .select('titulo, emoji, dias')
-        .eq('id', s.reto_id)
-        .maybeSingle()
-
-      const { data: perfil } = await supabase
-        .from('perfiles')
-        .select('nombre, username')
-        .eq('id', s.usuario_id)
-        .maybeSingle()
-
-      return { ...s, reto, perfil }
-    })
-  )
-
-  return conDatos
-}
-
-export async function aceptarSolicitudReto(solicitudId, retoId, usuarioId) {
-  await supabase
-    .from('participantes_reto')
-    .insert({
-      reto_id: retoId,
-      usuario_id: usuarioId,
-      rol: 'participante'
-    })
-
-  await supabase
-    .from('solicitudes_reto')
-    .update({ estado: 'aceptada' })
-    .eq('id', solicitudId)
-}
-
-export async function rechazarSolicitudReto(solicitudId) {
-  await supabase
-    .from('solicitudes_reto')
-    .update({ estado: 'rechazada' })
-    .eq('id', solicitudId)
-}
-
 export async function completarDia(retoId, fotoUrl = null) {
   const { data: { user } } = await supabase.auth.getUser()
+  const hoy = new Date().toISOString().split('T')[0]
 
   const { data: participante } = await supabase
     .from('participantes_reto')
-    .select('dias_completados')
+    .select('dias_completados, ultima_foto_fecha')
     .eq('reto_id', retoId)
     .eq('usuario_id', user.id)
     .single()
 
-  await supabase
+  if (participante?.ultima_foto_fecha === hoy) {
+    return { error: 'Ya subiste la foto de hoy' }
+  }
+
+  const { error } = await supabase
     .from('participantes_reto')
     .update({
-      foto_hoy: true,
+      ultima_foto_fecha: hoy,
       foto_url: fotoUrl,
       dias_completados: (participante?.dias_completados || 0) + 1
     })
     .eq('reto_id', retoId)
     .eq('usuario_id', user.id)
+
+  if (error) return { error: 'Error al guardar el progreso' }
 
   const { data: perfilActual } = await supabase
     .from('perfiles')
@@ -165,4 +124,6 @@ export async function completarDia(retoId, fotoUrl = null) {
     .from('perfiles')
     .update({ racha_actual: nuevaRacha, mejor_racha: mejorRacha })
     .eq('id', user.id)
+
+  return { ok: true }
 }
