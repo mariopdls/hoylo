@@ -212,12 +212,7 @@ function App() {
 
   if (!usuario) return (
     <div className="onboarding-wrapper">
-      <Login onLogin={async (user) => {
-        setCargandoAuth(true)
-        setUsuario(user)
-        await cargarPerfilYRetos(user)
-        setCargandoAuth(false)
-      }} />
+      <Login />
     </div>
   )
 

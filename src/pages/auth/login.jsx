@@ -1,22 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '../../services/supabase'
 import logo from '../../assets/logo3.png'
 
-function Login({ onLogin }) {
+function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [esRegistro, setEsRegistro] = useState(false)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState(null)
-
-  useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        onLogin(session.user)
-      }
-    })
-    return () => listener.subscription.unsubscribe()
-  }, [])
 
   const mensajeError = (msg) => {
     if (msg.includes('already registered')) return 'Este correo ya tiene una cuenta. Inicia sesión.'
@@ -47,18 +38,14 @@ function Login({ onLogin }) {
         setError('Este correo ya tiene una cuenta. Inicia sesión.')
         return
       }
-
-      onLogin(data.user)
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
       setCargando(false)
 
       if (error) {
         setError(mensajeError(error.message))
         return
       }
-
-      onLogin(data.user)
     }
   }
 

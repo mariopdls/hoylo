@@ -14,6 +14,10 @@ const AFICIONES_BASE_EN = [
   '💻 Technology', '🎬 Cinema', '🧘 Meditation', '📷 Photography'
 ]
 
+const GROQ_ENDPOINT = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api/groq`
+  : '/api/groq'
+
 async function obtenerSugerencias(aficionesSeleccionadas, idioma) {
   const prompt = idioma === 'es'
     ? `El usuario tiene estas aficiones: ${aficionesSeleccionadas.join(', ')}.
@@ -27,16 +31,11 @@ Each one must have an emoji and a short name.
 Reply ONLY with a valid JSON array, no extra text, no markdown.
 Format: ["🎸 Guitar", "🎹 Piano", "🎤 Singing"]`
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const response = await fetch(GROQ_ENDPOINT, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 200
+      messages: [{ role: 'user', content: prompt }]
     })
   })
 
