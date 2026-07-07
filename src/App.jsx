@@ -89,27 +89,29 @@ function App() {
   }
 
   const cargarPerfilYRetos = async (user) => {
-    const { data: perfilData } = await supabase
-      .from('perfiles')
-      .select('id, idioma')
-      .eq('id', user.id)
-      .maybeSingle()
+  const { data: perfilData } = await supabase
+    .from('perfiles')
+    .select('id, idioma, username')
+    .eq('id', user.id)
+    .maybeSingle()
 
-    if (perfilData) {
-      setPaso(8)
-      if (perfilData.idioma) {
-        i18n.changeLanguage(perfilData.idioma)
-        setIdioma(perfilData.idioma)
-      }
-      const retosData = await cargarRetos(user.id)
-      setRetosUsuario(retosData)
-      await cargarNotificacionesPendientes(user)
-    } else {
-      setPaso(0)
-      setRespuestas({})
-      setRetosUsuario([])
+  if (perfilData?.username) {
+    // Perfil completo — usuario ya hizo el onboarding
+    setPaso(8)
+    if (perfilData.idioma) {
+      i18n.changeLanguage(perfilData.idioma)
+      setIdioma(perfilData.idioma)
     }
+    const retosData = await cargarRetos(user.id)
+    setRetosUsuario(retosData)
+    await cargarNotificacionesPendientes(user)
+  } else {
+    // Perfil vacío o sin username — usuario nuevo, va al onboarding
+    setPaso(0)
+    setRespuestas({})
+    setRetosUsuario([])
   }
+}
 
   const guardarPerfilInicial = async (idiomaActual, user) => {
     const perfilData = respuestas.perfil || {}
