@@ -72,10 +72,18 @@ function App() {
   useEffect(() => {
     const listener = CapacitorApp.addListener('appUrlOpen', async ({ url }) => {
       if (!url.includes('login-callback')) return
-      const codigo = new URL(url).searchParams.get('code')
-      if (codigo) {
-        const { error } = await supabase.auth.exchangeCodeForSession(codigo)
-        if (error) mostrarToast('No se pudo iniciar sesión con Google', 'error')
+      try {
+        const codigo = new URL(url).searchParams.get('code')
+        if (codigo) {
+          const { error } = await supabase.auth.exchangeCodeForSession(codigo)
+          if (error) {
+            console.error('Error exchangeCodeForSession:', error)
+            mostrarToast('No se pudo iniciar sesión con Google', 'error')
+          }
+        }
+      } catch (err) {
+        console.error('Error procesando callback de Google:', err)
+        mostrarToast('No se pudo iniciar sesión con Google', 'error')
       }
       await Browser.close()
     })
@@ -174,7 +182,13 @@ function App() {
       const user = session?.user ?? null
       if (!activo) return
       setUsuario(user)
-      if (user) await cargarPerfilYRetos(user)
+      if (user) {
+        try {
+          await cargarPerfilYRetos(user)
+        } catch (err) {
+          console.error('Error cargando perfil:', err)
+        }
+      }
       if (activo) setCargandoAuth(false)
     }
 
@@ -186,7 +200,12 @@ function App() {
 
       if (event === 'SIGNED_IN' && user) {
         setCargandoAuth(true)
-        await cargarPerfilYRetos(user)
+        try {
+          await cargarPerfilYRetos(user)
+        } catch (err) {
+          console.error('Error cargando perfil:', err)
+          mostrarToast('No se pudo cargar tu perfil, inténtalo de nuevo', 'error')
+        }
         setCargandoAuth(false)
       }
 
