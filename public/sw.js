@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hoylo-v4'
+const CACHE_NAME = 'hoylo-v5'
 const PRECACHE_URLS = ['/', '/manifest.json', '/icon-192.png', '/icon-512.png']
 
 self.addEventListener('install', (e) => {
@@ -19,6 +19,10 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return
+
+  // Solo cacheamos el propio shell de la app — las peticiones a Supabase,
+  // Cloudinary, Google, etc. deben ir directas a la red sin pasar por aquí.
+  if (new URL(e.request.url).origin !== self.location.origin) return
 
   e.respondWith(
     fetch(e.request)
