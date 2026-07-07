@@ -211,11 +211,30 @@ function App() {
     setRetosUsuario(prev => prev.map(r => r.id === retoActualizado.id ? retoActualizado : r))
   }
 
-  const toggleDark = () => {
+  const toggleDark = (e) => {
     const nuevo = !darkMode
-    setDarkMode(nuevo)
-    localStorage.setItem('darkMode', nuevo)
-    document.documentElement.setAttribute('data-theme', nuevo ? 'dark' : 'light')
+    const aplicarCambio = () => {
+      setDarkMode(nuevo)
+      localStorage.setItem('darkMode', nuevo)
+      document.documentElement.setAttribute('data-theme', nuevo ? 'dark' : 'light')
+    }
+
+    if (!document.startViewTransition || !e) {
+      aplicarCambio()
+      return
+    }
+
+    const x = e.clientX
+    const y = e.clientY
+    const radio = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
+
+    const transicion = document.startViewTransition(aplicarCambio)
+    transicion.ready.then(() => {
+      document.documentElement.animate(
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radio}px at ${x}px ${y}px)`] },
+        { duration: 550, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+      )
+    })
   }
 
   const toggleIdioma = () => {
