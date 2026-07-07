@@ -1,46 +1,50 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
 
-const CLAVE_NOTIFICACIONES = 'hoylo_notificaciones'
-const CLAVE_HORA_RECORDATORIO = 'hoylo_hora_recordatorio'
+function urlBase64ToUint8Array(base64) {
+  const padding = '='.repeat((4 - base64.length % 4) % 4)
+  const base64Segura = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const bruto = window.atob(base64Segura)
+  return Uint8Array.from([...bruto].map(c => c.charCodeAt(0)))
+}
+
+async function llamarApiSuscripcion(metodo, body) {
+  const { data: { session } } = await supabase.auth.getSession()
+  return fetch(`${import.meta.env.VITE_API_URL || ''}/api/suscripcion-push`, {
+    method: metodo,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`
+    },
+    body: JSON.stringify(body)
+  })
+}
 
 function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark, onToast }) {
   const { t } = useTranslation()
   const [confirmEliminar, setConfirmEliminar] = useState(false)
   const [eliminando, setEliminando] = useState(false)
-  const [horaRecordatorio, setHoraRecordatorio] = useState(() => localStorage.getItem(CLAVE_HORA_RECORDATORIO) || '09:00')
-  const [notificaciones, setNotificaciones] = useState(() => localStorage.getItem(CLAVE_NOTIFICACIONES) === 'true')
+  const [notificaciones, setNotificaciones] = useState(false)
   const [perfilPublico, setPerfilPublico] = useState(true)
   const [mostrarInstrucciones, setMostrarInstrucciones] = useState(false)
-  const timerRef = useRef(null)
-
-  const programarRecordatorio = (hora) => {
-    clearTimeout(timerRef.current)
-    const [horas, minutos] = hora.split(':').map(Number)
-    const ahora = new Date()
-    const objetivo = new Date()
-    objetivo.setHours(horas, minutos, 0, 0)
-    if (objetivo <= ahora) objetivo.setDate(objetivo.getDate() + 1)
-    const diff = objetivo - ahora
-    timerRef.current = setTimeout(() => {
-      new Notification('Hoylo 🌞', { body: '¡No olvides completar tus retos de hoy!', icon: '/icon-192.png' })
-      programarRecordatorio(hora)
-    }, diff)
-  }
 
   useEffect(() => {
     cargarConfig()
-    if (localStorage.getItem(CLAVE_NOTIFICACIONES) === 'true') {
-      programarRecordatorio(localStorage.getItem(CLAVE_HORA_RECORDATORIO) || '09:00')
-    }
-    return () => clearTimeout(timerRef.current)
+    cargarEstadoNotificaciones()
   }, [])
 
   const cargarConfig = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     const { data } = await supabase.from('perfiles').select('perfil_publico').eq('id', user.id).maybeSingle()
     if (data) setPerfilPublico(data.perfil_publico ?? true)
+  }
+
+  const cargarEstadoNotificaciones = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    const registro = await navigator.serviceWorker.ready
+    const suscripcion = await registro.pushManager.getSubscription()
+    setNotificaciones(!!suscripcion)
   }
 
   const togglePerfilPublico = async () => {
@@ -69,21 +73,35 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark,
     }
   }
 
-  const handleNotificaciones = () => {
+  const handleNotificaciones = async () => {
     if (!notificaciones) {
-      Notification.requestPermission().then(permiso => {
-        if (permiso === 'granted') {
-          setNotificaciones(true)
-          localStorage.setItem(CLAVE_NOTIFICACIONES, 'true')
-          programarRecordatorio(horaRecordatorio)
-        } else {
-          setMostrarInstrucciones(true)
-        }
+      const permiso = await Notification.requestPermission()
+      if (permiso !== 'granted') {
+        setMostrarInstrucciones(true)
+        return
+      }
+
+      const registro = await navigator.serviceWorker.ready
+      const suscripcion = await registro.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY)
       })
+
+      const respuesta = await llamarApiSuscripcion('POST', suscripcion.toJSON())
+      if (respuesta.ok) {
+        setNotificaciones(true)
+      } else {
+        await suscripcion.unsubscribe()
+        onToast?.(t('config.errorNotificaciones'), 'error')
+      }
     } else {
+      const registro = await navigator.serviceWorker.ready
+      const suscripcion = await registro.pushManager.getSubscription()
+      if (suscripcion) {
+        await llamarApiSuscripcion('DELETE', { endpoint: suscripcion.endpoint })
+        await suscripcion.unsubscribe()
+      }
       setNotificaciones(false)
-      localStorage.setItem(CLAVE_NOTIFICACIONES, 'false')
-      clearTimeout(timerRef.current)
     }
   }
 
@@ -126,22 +144,9 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark,
           </div>
 
           {notificaciones && (
-            <div className="config-fila">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <i className="ti ti-clock" style={{ fontSize: '20px', color: 'var(--accent)' }}></i>
-                <p className="reto-titulo">{t('config.horaRecordatorio')}</p>
-              </div>
-              <input
-                type="time"
-                value={horaRecordatorio}
-                onChange={e => {
-                  setHoraRecordatorio(e.target.value)
-                  localStorage.setItem(CLAVE_HORA_RECORDATORIO, e.target.value)
-                  programarRecordatorio(e.target.value)
-                }}
-                style={{ border: 'none', background: 'none', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-base)' }}
-              />
-            </div>
+            <p className="guia-texto" style={{ fontSize: '12px', paddingLeft: '4px' }}>
+              {t('config.horaRecordatorioFija')}
+            </p>
           )}
 
           {mostrarInstrucciones && (

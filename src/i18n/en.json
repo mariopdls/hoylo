@@ -176,7 +176,8 @@
     "cambiarIdioma": "Switch to Español",
     "notificaciones": "Notifications",
     "recordatorio": "Daily reminder",
-    "horaRecordatorio": "Reminder time",
+    "horaRecordatorioFija": "We'll notify you around 8:00 PM",
+    "errorNotificaciones": "Couldn't enable the reminder. Try again.",
     "privacidad": "Privacy",
     "perfilPublico": "Public profile",
     "perfilPublicoTexto": "Others can find you by username",
@@ -222,6 +223,7 @@
   "solicitudEnviada": "Request sent",
   "perfilGuardado": "Profile saved",
   "fotoActualizada": "Photo updated",
-  "errorFotoPerfil": "Error uploading photo"
+  "errorFotoPerfil": "Error uploading photo",
+  "errorGuardarPerfil": "Couldn't save your profile. Try again."
 }
 }

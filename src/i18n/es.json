@@ -176,7 +176,8 @@
     "cambiarIdioma": "Cambiar a English",
     "notificaciones": "Notificaciones",
     "recordatorio": "Recordatorio diario",
-    "horaRecordatorio": "Hora del recordatorio",
+    "horaRecordatorioFija": "Te avisaremos sobre las 20:00",
+    "errorNotificaciones": "No se pudo activar el recordatorio. Inténtalo de nuevo.",
     "privacidad": "Privacidad",
     "perfilPublico": "Perfil público",
     "perfilPublicoTexto": "Otros pueden encontrarte por username",
@@ -222,6 +223,7 @@
   "solicitudEnviada": "Solicitud enviada",
   "perfilGuardado": "Perfil guardado",
   "fotoActualizada": "Foto actualizada",
-  "errorFotoPerfil": "Error al subir la foto"
+  "errorFotoPerfil": "Error al subir la foto",
+  "errorGuardarPerfil": "No se pudo guardar tu perfil. Inténtalo de nuevo."
 }
 }

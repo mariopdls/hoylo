@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import { cargarRetos } from '../services/retos'
 import { cargarAmigos } from '../services/social'
+import { calcularRachaVigente } from '../services/racha'
 import Amigos from './Amigos'
 import Descubrir from './Descubrir'
 import Perfil from './Perfil'
@@ -31,6 +32,7 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
   const hora = new Date().getHours()
   const saludo = hora < 14 ? 'Buenos días' : hora < 21 ? 'Buenas tardes' : 'Buenas noches'
   const retosPendientes = retos.filter(r => !r.foto_hoy).length
+  const rachaVigente = calcularRachaVigente(perfil?.racha_actual, perfil?.racha_ultima_fecha)
 
   const navItems = [
     { id: 'inicio', icon: 'ti-home', label: 'Inicio' },
@@ -215,7 +217,7 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               {[
-                { label: 'Racha actual', value: `🔥 ${perfil?.racha_actual || 0}`, sub: 'días consecutivos' },
+                { label: 'Racha actual', value: `🔥 ${rachaVigente}`, sub: 'días consecutivos' },
                 { label: 'Mejor racha', value: `⭐ ${perfil?.mejor_racha || 0}`, sub: 'días seguidos' },
                 { label: 'Retos activos', value: retos.length, sub: 'en progreso' },
               ].map((stat, i) => (
@@ -283,7 +285,7 @@ function Dashboard({ usuario, onNuevoReto, onEliminarReto, onActualizarReto, onT
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               {[
-                { label: 'Racha actual', value: `🔥 ${perfil?.racha_actual || 0}`, sub: 'días consecutivos' },
+                { label: 'Racha actual', value: `🔥 ${rachaVigente}`, sub: 'días consecutivos' },
                 { label: 'Mejor racha', value: `⭐ ${perfil?.mejor_racha || 0}`, sub: 'tu récord personal' },
                 { label: 'Días totales', value: retos.reduce((acc, r) => acc + (r.dias_completados || 0), 0), sub: 'días completados' },
                 { label: 'Retos activos', value: retos.length, sub: 'en progreso ahora' },

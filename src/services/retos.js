@@ -113,16 +113,26 @@ export async function completarDia(retoId, fotoUrl = null) {
 
   const { data: perfilActual } = await supabase
     .from('perfiles')
-    .select('racha_actual, mejor_racha')
+    .select('racha_actual, mejor_racha, racha_ultima_fecha')
     .eq('id', user.id)
     .single()
 
-  const nuevaRacha = (perfilActual?.racha_actual || 0) + 1
+  const ayer = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+  let nuevaRacha
+  if (perfilActual?.racha_ultima_fecha === hoy) {
+    nuevaRacha = perfilActual.racha_actual || 1
+  } else if (perfilActual?.racha_ultima_fecha === ayer) {
+    nuevaRacha = (perfilActual.racha_actual || 0) + 1
+  } else {
+    nuevaRacha = 1
+  }
+
   const mejorRacha = Math.max(nuevaRacha, perfilActual?.mejor_racha || 0)
 
   await supabase
     .from('perfiles')
-    .update({ racha_actual: nuevaRacha, mejor_racha: mejorRacha })
+    .update({ racha_actual: nuevaRacha, mejor_racha: mejorRacha, racha_ultima_fecha: hoy })
     .eq('id', user.id)
 
   return { ok: true }

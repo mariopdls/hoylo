@@ -17,6 +17,7 @@ import Amigos from './pages/Amigos'
 import Descubrir from './pages/Descubrir'
 import Dashboard from './pages/Dashboard'
 import Cargando from './components/Cargando'
+import SinConexion from './components/SinConexion'
 import ModalConfig from './components/ModalConfig'
 import PullToRefresh from './components/PullToRefresh'
 import Toast from './components/Toast'
@@ -43,9 +44,21 @@ function App() {
   const [notificacionesPendientes, setNotificacionesPendientes] = useState(0)
   const [toast, setToast] = useState(null)
   const [esPc, setEsPc] = useState(window.innerWidth >= 900)
+  const [online, setOnline] = useState(navigator.onLine)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+  }, [])
+
+  useEffect(() => {
+    const marcarOnline = () => setOnline(true)
+    const marcarOffline = () => setOnline(false)
+    window.addEventListener('online', marcarOnline)
+    window.addEventListener('offline', marcarOffline)
+    return () => {
+      window.removeEventListener('online', marcarOnline)
+      window.removeEventListener('offline', marcarOffline)
+    }
   }, [])
 
   useEffect(() => {
@@ -131,7 +144,10 @@ function App() {
         idioma: idiomaActual
       }, { onConflict: 'id' })
 
-    if (error) console.error('Error guardando perfil:', error)
+    if (error) {
+      console.error('Error guardando perfil:', error)
+      return null
+    }
     return user
   }
 
@@ -208,6 +224,8 @@ function App() {
     setIdioma(nuevo)
   }
 
+  if (!online) return <SinConexion onReintentar={() => setOnline(navigator.onLine)} />
+
   if (cargandoAuth) return <Cargando />
 
   if (!usuario) return (
@@ -235,7 +253,10 @@ function App() {
               onBack={anterior}
               onFin={async (retos) => {
                 const user = await guardarPerfilInicial(idioma, usuario)
-                if (!user) return
+                if (!user) {
+                  mostrarToast(t('toast.errorGuardarPerfil'), 'error')
+                  return
+                }
                 for (const reto of retos) {
                   await guardarReto(user.id, reto)
                 }

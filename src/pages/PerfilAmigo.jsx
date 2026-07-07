@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cargarPerfilPublico, contarRetosCompletados, cargarRetosPublicosActivos } from '../services/perfilesPublicos'
 import { cargarAmigosenComun, invitarAmigo } from '../services/social'
+import { calcularRachaVigente } from '../services/racha'
 
 function PerfilAmigo({ amigoId, onVolver, retosUsuario, onToast }) {
   const { t } = useTranslation()
@@ -70,6 +71,7 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario, onToast }) {
   )
 
   const circunferencia = 94
+  const rachaVigente = calcularRachaVigente(perfil.racha_actual, perfil.racha_ultima_fecha)
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', justifyContent: 'center', background: 'var(--bg-primary)' }}>
@@ -154,9 +156,9 @@ function PerfilAmigo({ amigoId, onVolver, retosUsuario, onToast }) {
               <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>{retosCount}</p>
               <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t('perfilAmigo.retos')}</p>
             </div>
-            {perfil.racha_actual > 0 && (
+            {rachaVigente > 0 && (
               <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center', boxShadow: 'var(--shadow-xs)', minWidth: '80px' }}>
-                <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>🔥 {perfil.racha_actual}</p>
+                <p style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>🔥 {rachaVigente}</p>
                 <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Racha actual</p>
               </div>
             )}

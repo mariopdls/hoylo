@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/enviar-recordatorios", "schedule": "0 18 * * *" }
+  ]
+}

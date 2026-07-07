@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
 import { subirFoto } from '../services/cloudinary'
+import { calcularRachaVigente } from '../services/racha'
 
 const AFICIONES_ES = ['🎵 Música', '📚 Lectura', '🏃 Deporte', '🎨 Arte', '🎮 Videojuegos', '🍳 Cocina', '✈️ Viajes', '🌱 Naturaleza', '💻 Tecnología', '🎬 Cine', '🧘 Meditación', '📷 Fotografía']
 const AFICIONES_EN = ['🎵 Music', '📚 Reading', '🏃 Sport', '🎨 Art', '🎮 Video games', '🍳 Cooking', '✈️ Travel', '🌱 Nature', '💻 Technology', '🎬 Cinema', '🧘 Meditation', '📷 Photography']
@@ -130,7 +131,7 @@ function Perfil({ usuario, onToast }) {
         {(perfil.racha_actual > 0 || perfil.mejor_racha > 0) && (
           <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '10px 18px', textAlign: 'center', boxShadow: 'var(--shadow-xs)' }}>
-              <p style={{ fontSize: '20px', fontWeight: '800', color: 'var(--accent)' }}>🔥 {perfil.racha_actual || 0}</p>
+              <p style={{ fontSize: '20px', fontWeight: '800', color: 'var(--accent)' }}>🔥 {calcularRachaVigente(perfil.racha_actual, perfil.racha_ultima_fecha)}</p>
               <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Racha actual</p>
             </div>
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '10px 18px', textAlign: 'center', boxShadow: 'var(--shadow-xs)' }}>

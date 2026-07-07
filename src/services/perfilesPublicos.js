@@ -3,7 +3,7 @@ import { supabase } from './supabase'
 export async function cargarPerfilPublico(usuarioId) {
   const { data } = await supabase
     .from('perfiles')
-    .select('nombre, username, avatar_url, ciudad, pais, aficiones, perfil_publico, bio, racha_actual, mejor_racha')
+    .select('nombre, username, avatar_url, ciudad, pais, aficiones, perfil_publico, bio, racha_actual, mejor_racha, racha_ultima_fecha')
     .eq('id', usuarioId)
     .maybeSingle()
 
