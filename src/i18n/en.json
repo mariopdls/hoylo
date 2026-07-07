@@ -41,7 +41,8 @@
     "boton": "Start",
     "cargando": "Preparing your challenges...",
     "cargandoSub": "One moment, thinking about what's best for you.",
-    "error": "Couldn't generate your challenges, please try again."
+    "error": "Couldn't generate your challenges, please try again.",
+    "reintentar": "Try again"
   },
   "home": {
     "saludoManana": "Good morning!",

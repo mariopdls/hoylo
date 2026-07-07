@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { App as CapacitorApp } from '@capacitor/app'
+import { Browser } from '@capacitor/browser'
 import { supabase } from './services/supabase'
 import { cargarRetos, guardarReto, eliminarReto } from './services/retos'
 import Login from './pages/auth/login'
@@ -65,6 +67,19 @@ function App() {
     const handleResize = () => setEsPc(window.innerWidth >= 900)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
+    const listener = CapacitorApp.addListener('appUrlOpen', async ({ url }) => {
+      if (!url.includes('login-callback')) return
+      const codigo = new URL(url).searchParams.get('code')
+      if (codigo) {
+        const { error } = await supabase.auth.exchangeCodeForSession(codigo)
+        if (error) mostrarToast('No se pudo iniciar sesión con Google', 'error')
+      }
+      await Browser.close()
+    })
+    return () => { listener.then(l => l.remove()) }
   }, [])
 
   const mostrarToast = (texto, tipo = 'ok') => {

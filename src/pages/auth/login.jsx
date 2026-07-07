@@ -1,12 +1,17 @@
 import { useState } from 'react'
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 import { supabase } from '../../services/supabase'
 import logo from '../../assets/logo3.png'
+
+const REDIRECT_NATIVO = 'com.hoylo.app://login-callback'
 
 function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [esRegistro, setEsRegistro] = useState(false)
   const [cargando, setCargando] = useState(false)
+  const [cargandoGoogle, setCargandoGoogle] = useState(false)
   const [error, setError] = useState(null)
 
   const mensajeError = (msg) => {
@@ -49,6 +54,32 @@ function Login() {
     }
   }
 
+  const handleGoogleLogin = async () => {
+    setCargandoGoogle(true)
+    setError(null)
+    const esNativo = Capacitor.isNativePlatform()
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: esNativo ? REDIRECT_NATIVO : window.location.origin,
+        skipBrowserRedirect: esNativo,
+        queryParams: { prompt: 'select_account' }
+      }
+    })
+
+    if (error) {
+      setError(mensajeError(error.message))
+      setCargandoGoogle(false)
+      return
+    }
+
+    if (esNativo && data?.url) {
+      await Browser.open({ url: data.url })
+    }
+    setCargandoGoogle(false)
+  }
+
   return (
     <div className="onboarding-screen">
       <div className="onboarding-logo">
@@ -82,6 +113,22 @@ function Login() {
         {error && (
           <p style={{ fontSize: '13px', color: '#E24B4A', marginTop: '8px' }}>{error}</p>
         )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '14px 0' }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>o</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+        </div>
+
+        <button
+          className="btn-opcion"
+          style={{ textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          onClick={handleGoogleLogin}
+          disabled={cargandoGoogle}
+        >
+          <i className="ti ti-brand-google" style={{ fontSize: '18px' }}></i>
+          {cargandoGoogle ? '...' : 'Continuar con Google'}
+        </button>
 
         <button
           className="btn-opcion"

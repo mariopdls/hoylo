@@ -13,29 +13,31 @@ export default async function handler(req, res) {
   if (errorUsuario || !user) return res.status(401).json({ error: 'Token inválido' })
 
   if (req.method === 'POST') {
-    const { endpoint, keys } = req.body
+    const { endpoint, keys, tipo, token } = req.body
+
+    const fila = tipo === 'fcm'
+      ? { usuario_id: user.id, endpoint: token, tipo: 'fcm', p256dh: null, auth: null }
+      : { usuario_id: user.id, endpoint, p256dh: keys.p256dh, auth: keys.auth, tipo: 'web' }
 
     const { error } = await supabaseAdmin
       .from('push_suscripciones')
-      .upsert({
-        usuario_id: user.id,
-        endpoint,
-        p256dh: keys.p256dh,
-        auth: keys.auth
-      }, { onConflict: 'endpoint' })
+      .upsert(fila, { onConflict: 'endpoint' })
 
     if (error) return res.status(500).json({ error: 'Error al guardar la suscripción' })
     return res.status(200).json({ ok: true })
   }
 
   if (req.method === 'DELETE') {
-    const { endpoint } = req.body
+    const { endpoint, tipo } = req.body
 
-    await supabaseAdmin
+    let query = supabaseAdmin
       .from('push_suscripciones')
       .delete()
       .eq('usuario_id', user.id)
-      .eq('endpoint', endpoint)
+
+    query = tipo === 'fcm' ? query.eq('tipo', 'fcm') : query.eq('endpoint', endpoint)
+
+    await query
 
     return res.status(200).json({ ok: true })
   }

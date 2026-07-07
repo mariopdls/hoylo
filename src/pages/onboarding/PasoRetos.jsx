@@ -18,7 +18,7 @@ function PasoRetos({ respuestas, onFin, onBack }) {
   const [retosSeleccionados, setRetosSeleccionados] = useState([])
   const [esPublico, setEsPublico] = useState(false)
 
-  useEffect(() => {
+  const generar = () => {
     generarRetos(respuestas, i18n.language)
       .then(data => {
         setRetos(data)
@@ -29,7 +29,17 @@ function PasoRetos({ respuestas, onFin, onBack }) {
         setError(t('retos.error'))
         setCargando(false)
       })
+  }
+
+  useEffect(() => {
+    generar()
   }, [])
+
+  const reintentar = () => {
+    setCargando(true)
+    setError(null)
+    generar()
+  }
 
   const toggleReto = (i) => {
     setRetosSeleccionados(prev =>
@@ -88,6 +98,9 @@ function PasoRetos({ respuestas, onFin, onBack }) {
       <div className="onboarding-content">
         <p className="guia-texto">{error}</p>
       </div>
+      <button className="btn-principal" onClick={reintentar}>
+        {t('retos.reintentar')}
+      </button>
     </div>
   )
 

@@ -41,7 +41,8 @@
     "boton": "Empezar",
     "cargando": "Preparando tus retos...",
     "cargandoSub": "Un momento, estoy pensando en lo mejor para ti.",
-    "error": "No he podido generar los retos, intenta de nuevo."
+    "error": "No he podido generar los retos, intenta de nuevo.",
+    "reintentar": "Reintentar"
   },
   "home": {
     "saludoManana": "¡Buenos días!",

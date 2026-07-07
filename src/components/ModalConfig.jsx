@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Capacitor } from '@capacitor/core'
+import { PushNotifications } from '@capacitor/push-notifications'
 import { supabase } from '../services/supabase'
+
+const esNativo = Capacitor.isNativePlatform()
 
 function urlBase64ToUint8Array(base64) {
   const padding = '='.repeat((4 - base64.length % 4) % 4)
@@ -41,6 +45,11 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark,
   }
 
   const cargarEstadoNotificaciones = async () => {
+    if (esNativo) {
+      const estado = await PushNotifications.checkPermissions()
+      setNotificaciones(estado.receive === 'granted')
+      return
+    }
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
     const registro = await navigator.serviceWorker.ready
     const suscripcion = await registro.pushManager.getSubscription()
@@ -73,7 +82,45 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark,
     }
   }
 
+  const activarNotificacionesNativas = async () => {
+    let estado = await PushNotifications.checkPermissions()
+    if (estado.receive === 'prompt') {
+      estado = await PushNotifications.requestPermissions()
+    }
+    if (estado.receive !== 'granted') {
+      setMostrarInstrucciones(true)
+      return
+    }
+
+    await new Promise((resolve) => {
+      PushNotifications.addListener('registration', async (token) => {
+        const respuesta = await llamarApiSuscripcion('POST', { tipo: 'fcm', token: token.value })
+        if (respuesta.ok) {
+          setNotificaciones(true)
+        } else {
+          onToast?.(t('config.errorNotificaciones'), 'error')
+        }
+        resolve()
+      })
+      PushNotifications.addListener('registrationError', () => {
+        onToast?.(t('config.errorNotificaciones'), 'error')
+        resolve()
+      })
+      PushNotifications.register()
+    })
+  }
+
   const handleNotificaciones = async () => {
+    if (esNativo) {
+      if (!notificaciones) {
+        await activarNotificacionesNativas()
+      } else {
+        await llamarApiSuscripcion('DELETE', { tipo: 'fcm' })
+        setNotificaciones(false)
+      }
+      return
+    }
+
     if (!notificaciones) {
       const permiso = await Notification.requestPermission()
       if (permiso !== 'granted') {
