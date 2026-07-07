@@ -87,6 +87,8 @@
     "username": "@username",
     "usernameError": "Ese username ya está en uso, elige otro.",
     "fechaError": "La fecha de nacimiento no es válida.",
+    "fechaRequerida": "Indica tu fecha de nacimiento para continuar.",
+    "edadMinima": "Debes tener al menos 14 años para usar Hoylo.",
     "ubicacion": "📍 Selecciona tu ubicación",
     "hombre": "Hombre",
     "mujer": "Mujer",

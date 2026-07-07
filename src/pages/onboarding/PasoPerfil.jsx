@@ -28,8 +28,25 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
   const continuar = async () => {
     if (!nombre || !username) return
 
-    if (año && (año > new Date().getFullYear() || año < 1900)) {
+    if (!dia || !mes || !año) {
+      setErrorUsername(t('perfil.fechaRequerida'))
+      return
+    }
+
+    if (año > new Date().getFullYear() || año < 1900) {
       setErrorUsername(t('perfil.fechaError'))
+      return
+    }
+
+    const fechaNacimientoDate = new Date(año, mes - 1, dia)
+    const hoy = new Date()
+    let edad = hoy.getFullYear() - fechaNacimientoDate.getFullYear()
+    const aunNoCumplidos = hoy.getMonth() < fechaNacimientoDate.getMonth() ||
+      (hoy.getMonth() === fechaNacimientoDate.getMonth() && hoy.getDate() < fechaNacimientoDate.getDate())
+    if (aunNoCumplidos) edad -= 1
+
+    if (edad < 14) {
+      setErrorUsername(t('perfil.edadMinima'))
       return
     }
 
@@ -48,9 +65,7 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
       return
     }
 
-    const fechaNacimiento = dia && mes && año
-      ? `${año}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
-      : ''
+    const fechaNacimiento = `${año}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
 
     onRespuesta('perfil', { nombre, username, fecha_nacimiento: fechaNacimiento, sexo, ciudad, pais })
     setCargando(false)

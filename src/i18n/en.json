@@ -87,6 +87,8 @@
     "username": "@username",
     "usernameError": "That username is already taken, choose another.",
     "fechaError": "The date of birth is not valid.",
+    "fechaRequerida": "Enter your date of birth to continue.",
+    "edadMinima": "You must be at least 14 years old to use Hoylo.",
     "ubicacion": "📍 Select your location",
     "hombre": "Male",
     "mujer": "Female",
