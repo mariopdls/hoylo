@@ -23,7 +23,10 @@ export default async function handler(req, res) {
       .from('push_suscripciones')
       .upsert(fila, { onConflict: 'endpoint' })
 
-    if (error) return res.status(500).json({ error: 'Error al guardar la suscripción' })
+    if (error) {
+      console.error('suscripcion-push.js: error al hacer upsert', error)
+      return res.status(500).json({ error: 'Error al guardar la suscripción', detalle: error.message, codigo: error.code })
+    }
     return res.status(200).json({ ok: true })
   }
 
