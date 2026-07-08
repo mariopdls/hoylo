@@ -9,9 +9,26 @@ export default async function handler(req, res) {
     const token = req.headers.authorization?.replace('Bearer ', '')
     if (!token) return res.status(401).json({ error: 'No autenticado' })
 
-    if (!process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('groq.js: faltan VITE_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en el entorno')
-      return res.status(500).json({ error: 'Configuración del servidor incompleta' })
+    const faltantes = []
+    if (!process.env.VITE_SUPABASE_URL) faltantes.push('VITE_SUPABASE_URL')
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) faltantes.push('SUPABASE_SERVICE_ROLE_KEY')
+    if (!process.env.GROQ_API_KEY) faltantes.push('GROQ_API_KEY')
+
+    if (faltantes.length > 0) {
+      console.error('groq.js: faltan variables de entorno:', faltantes.join(', '))
+      return res.status(500).json({ error: 'Configuración del servidor incompleta', faltantes })
+    }
+
+    let rolDetectado = null
+    try {
+      const payload = process.env.SUPABASE_SERVICE_ROLE_KEY.split('.')[1]
+      rolDetectado = JSON.parse(Buffer.from(payload, 'base64').toString()).role
+    } catch (e) {
+      rolDetectado = 'no-decodificable'
+    }
+    if (rolDetectado !== 'service_role') {
+      console.error('groq.js: SUPABASE_SERVICE_ROLE_KEY no es una service_role key, role detectado:', rolDetectado)
+      return res.status(500).json({ error: 'La clave configurada no es de tipo service_role', rolDetectado })
     }
 
     const supabaseAdmin = createClient(
