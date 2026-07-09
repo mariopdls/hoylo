@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { App as CapacitorApp } from '@capacitor/app'
 import { Browser } from '@capacitor/browser'
 import { supabase } from './services/supabase'
@@ -47,6 +47,7 @@ function App() {
   const [toast, setToast] = useState(null)
   const [esPc, setEsPc] = useState(window.innerWidth >= 900)
   const [online, setOnline] = useState(navigator.onLine)
+  const cargaEnCurso = useRef(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
@@ -194,6 +195,11 @@ function App() {
       setUsuario(user)
 
       if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && user) {
+        if (cargaEnCurso.current) {
+          console.log('[hoylo] evento duplicado, ya hay una carga en curso -> se ignora')
+          return
+        }
+        cargaEnCurso.current = true
         console.log('[hoylo] setCargandoAuth(true)')
         setCargandoAuth(true)
         try {
@@ -204,6 +210,8 @@ function App() {
         } catch (err) {
           console.error('[hoylo] Error cargando perfil:', err)
           mostrarToast('No se pudo cargar tu perfil, inténtalo de nuevo', 'error')
+        } finally {
+          cargaEnCurso.current = false
         }
         console.log('[hoylo] setCargandoAuth(false) tras cargarPerfilYRetos')
         setCargandoAuth(false)
