@@ -192,7 +192,10 @@ function App() {
         console.log('[hoylo] setCargandoAuth(true)')
         setCargandoAuth(true)
         try {
-          await cargarPerfilYRetos(user)
+          await Promise.race([
+            cargarPerfilYRetos(user),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout cargando perfil (10s)')), 10000))
+          ])
         } catch (err) {
           console.error('[hoylo] Error cargando perfil:', err)
           mostrarToast('No se pudo cargar tu perfil, inténtalo de nuevo', 'error')
