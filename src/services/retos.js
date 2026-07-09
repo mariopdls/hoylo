@@ -3,16 +3,17 @@ import { supabase } from './supabase'
 export async function cargarRetos(usuarioId) {
   const hoy = new Date().toISOString().split('T')[0]
 
-  const { data: retosDirectos } = await supabase
-    .from('retos')
-    .select('*')
-    .eq('usuario_id', usuarioId)
-    .order('creado_at', { ascending: true })
-
-  const { data: participaciones } = await supabase
-    .from('participantes_reto')
-    .select('reto_id, dias_completados, foto_url, ultima_foto_fecha, retos(*)')
-    .eq('usuario_id', usuarioId)
+  const [{ data: retosDirectos }, { data: participaciones }] = await Promise.all([
+    supabase
+      .from('retos')
+      .select('*')
+      .eq('usuario_id', usuarioId)
+      .order('creado_at', { ascending: true }),
+    supabase
+      .from('participantes_reto')
+      .select('reto_id, dias_completados, foto_url, ultima_foto_fecha, retos(*)')
+      .eq('usuario_id', usuarioId)
+  ])
 
   const misParticipaciones = new Map((participaciones || []).map(p => [p.reto_id, p]))
 

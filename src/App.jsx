@@ -94,32 +94,37 @@ function App() {
     setToast({ texto, tipo })
   }
 
-  const cargarNotificacionesPendientes = async (user) => {
-    const { data: perfilData } = await supabase
-      .from('perfiles')
-      .select('username')
-      .eq('id', user.id)
-      .maybeSingle()
+  const cargarNotificacionesPendientes = async (user, usernameConocido) => {
+    let username = usernameConocido
 
-    if (!perfilData?.username) return
+    if (!username) {
+      const { data: perfilData } = await supabase
+        .from('perfiles')
+        .select('username')
+        .eq('id', user.id)
+        .maybeSingle()
+      username = perfilData?.username
+    }
 
-    const { count: countSolicitudes } = await supabase
-      .from('solicitudes_amistad')
-      .select('id', { count: 'exact', head: true })
-      .eq('para_usuario_id', user.id)
-      .eq('estado', 'pendiente')
+    if (!username) return
 
-    const { count: countInvitaciones } = await supabase
-      .from('invitaciones')
-      .select('id', { count: 'exact', head: true })
-      .eq('para_username', perfilData.username)
-      .eq('estado', 'pendiente')
-
-    const { count: countSolicitudesReto } = await supabase
-      .from('solicitudes_reto')
-      .select('id', { count: 'exact', head: true })
-      .eq('para_admin_id', user.id)
-      .eq('estado', 'pendiente')
+    const [{ count: countSolicitudes }, { count: countInvitaciones }, { count: countSolicitudesReto }] = await Promise.all([
+      supabase
+        .from('solicitudes_amistad')
+        .select('id', { count: 'exact', head: true })
+        .eq('para_usuario_id', user.id)
+        .eq('estado', 'pendiente'),
+      supabase
+        .from('invitaciones')
+        .select('id', { count: 'exact', head: true })
+        .eq('para_username', username)
+        .eq('estado', 'pendiente'),
+      supabase
+        .from('solicitudes_reto')
+        .select('id', { count: 'exact', head: true })
+        .eq('para_admin_id', user.id)
+        .eq('estado', 'pendiente')
+    ])
 
     setNotificacionesPendientes((countSolicitudes || 0) + (countInvitaciones || 0) + (countSolicitudesReto || 0))
   }
@@ -140,13 +145,13 @@ function App() {
       i18n.changeLanguage(perfilData.idioma)
       setIdioma(perfilData.idioma)
     }
-    console.log('[hoylo] cargarPerfilYRetos: antes de cargarRetos')
-    const retosData = await cargarRetos(user.id)
-    console.log('[hoylo] cargarPerfilYRetos: cargarRetos terminado', retosData?.length)
+    console.log('[hoylo] cargarPerfilYRetos: antes de cargarRetos + notificaciones')
+    const [retosData] = await Promise.all([
+      cargarRetos(user.id),
+      cargarNotificacionesPendientes(user, perfilData.username)
+    ])
+    console.log('[hoylo] cargarPerfilYRetos: cargarRetos + notificaciones terminado', retosData?.length)
     setRetosUsuario(retosData)
-    console.log('[hoylo] cargarPerfilYRetos: antes de cargarNotificacionesPendientes')
-    await cargarNotificacionesPendientes(user)
-    console.log('[hoylo] cargarPerfilYRetos: cargarNotificacionesPendientes terminado')
   } else {
     // Perfil vacío o sin username — usuario nuevo, va al onboarding
     setPaso(0)
