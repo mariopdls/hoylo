@@ -11,6 +11,17 @@ createRoot(document.getElementById('root')).render(
 )
 
 if ('serviceWorker' in navigator) {
+  // Si un Service Worker nuevo toma el control mientras la pestaña ya está
+  // abierta, recargamos una vez para que nunca quede corriendo con una
+  // versión vieja del SW a medio actualizar (p.ej. interceptando peticiones
+  // que la versión anterior gestionaba mal).
+  let yaRecargado = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (yaRecargado) return
+    yaRecargado = true
+    window.location.reload()
+  })
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(reg => console.log('SW registrado:', reg.scope))
