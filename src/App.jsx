@@ -125,11 +125,13 @@ function App() {
   }
 
   const cargarPerfilYRetos = async (user) => {
-  const { data: perfilData } = await supabase
+  console.log('[hoylo] cargarPerfilYRetos: inicio', user.id)
+  const { data: perfilData, error: errorPerfil } = await supabase
     .from('perfiles')
     .select('id, idioma, username')
     .eq('id', user.id)
     .maybeSingle()
+  console.log('[hoylo] cargarPerfilYRetos: select perfiles terminado', { perfilData, errorPerfil })
 
   if (perfilData?.username) {
     // Perfil completo — usuario ya hizo el onboarding
@@ -138,15 +140,20 @@ function App() {
       i18n.changeLanguage(perfilData.idioma)
       setIdioma(perfilData.idioma)
     }
+    console.log('[hoylo] cargarPerfilYRetos: antes de cargarRetos')
     const retosData = await cargarRetos(user.id)
+    console.log('[hoylo] cargarPerfilYRetos: cargarRetos terminado', retosData?.length)
     setRetosUsuario(retosData)
+    console.log('[hoylo] cargarPerfilYRetos: antes de cargarNotificacionesPendientes')
     await cargarNotificacionesPendientes(user)
+    console.log('[hoylo] cargarPerfilYRetos: cargarNotificacionesPendientes terminado')
   } else {
     // Perfil vacío o sin username — usuario nuevo, va al onboarding
     setPaso(0)
     setRespuestas({})
     setRetosUsuario([])
   }
+  console.log('[hoylo] cargarPerfilYRetos: fin')
 }
 
   const guardarPerfilInicial = async (idiomaActual, user) => {
@@ -175,23 +182,28 @@ function App() {
   }
 
   useEffect(() => {
+    console.log('[hoylo] suscribiendo onAuthStateChange')
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[hoylo] onAuthStateChange evento:', event, 'user:', session?.user?.id)
       const user = session?.user ?? null
       setUsuario(user)
 
       if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && user) {
+        console.log('[hoylo] setCargandoAuth(true)')
         setCargandoAuth(true)
         try {
           await cargarPerfilYRetos(user)
         } catch (err) {
-          console.error('Error cargando perfil:', err)
+          console.error('[hoylo] Error cargando perfil:', err)
           mostrarToast('No se pudo cargar tu perfil, inténtalo de nuevo', 'error')
         }
+        console.log('[hoylo] setCargandoAuth(false) tras cargarPerfilYRetos')
         setCargandoAuth(false)
         return
       }
 
       if (event === 'INITIAL_SESSION' && !user) {
+        console.log('[hoylo] INITIAL_SESSION sin user -> setCargandoAuth(false)')
         setCargandoAuth(false)
       }
 
