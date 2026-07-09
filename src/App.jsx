@@ -189,7 +189,7 @@ function App() {
 
   useEffect(() => {
     console.log('[hoylo] suscribiendo onAuthStateChange')
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[hoylo] onAuthStateChange evento:', event, 'user:', session?.user?.id)
       const user = session?.user ?? null
       setUsuario(user)
@@ -202,19 +202,29 @@ function App() {
         cargaEnCurso.current = true
         console.log('[hoylo] setCargandoAuth(true)')
         setCargandoAuth(true)
-        try {
-          await Promise.race([
-            cargarPerfilYRetos(user),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout cargando perfil (10s)')), 10000))
-          ])
-        } catch (err) {
-          console.error('[hoylo] Error cargando perfil:', err)
-          mostrarToast('No se pudo cargar tu perfil, inténtalo de nuevo', 'error')
-        } finally {
-          cargaEnCurso.current = false
-        }
-        console.log('[hoylo] setCargandoAuth(false) tras cargarPerfilYRetos')
-        setCargandoAuth(false)
+
+        // Importante: Supabase invoca este callback de forma síncrona desde
+        // dentro de su propia inicialización interna (_initialize -> lock ->
+        // _notifyAllSubscribers). Si hacemos await de una llamada a Supabase
+        // aquí mismo, esa llamada espera a que el cliente esté "listo", y el
+        // cliente no se considera listo hasta que este callback termina ->
+        // interbloqueo. Por eso el trabajo async se difiere con setTimeout,
+        // fuera de la pila de llamadas de Supabase.
+        setTimeout(async () => {
+          try {
+            await Promise.race([
+              cargarPerfilYRetos(user),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout cargando perfil (10s)')), 10000))
+            ])
+          } catch (err) {
+            console.error('[hoylo] Error cargando perfil:', err)
+            mostrarToast('No se pudo cargar tu perfil, inténtalo de nuevo', 'error')
+          } finally {
+            cargaEnCurso.current = false
+          }
+          console.log('[hoylo] setCargandoAuth(false) tras cargarPerfilYRetos')
+          setCargandoAuth(false)
+        }, 0)
         return
       }
 
