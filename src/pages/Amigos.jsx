@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
 import { createPortal } from 'react-dom'
+import { normalizarUsername } from '../utils/username'
 import {
   cargarInvitacionesPendientes, aceptarInvitacion, rechazarInvitacion,
   enviarSolicitudAmistad, cargarSolicitudesPendientes,
@@ -101,9 +102,10 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
   }
 
   const handleBuscar = async (valor) => {
-    setUsernameSolicitar(valor)
-    if (valor.length >= 2) {
-      const resultados = await buscarUsuarios(valor)
+    const limpio = normalizarUsername(valor)
+    setUsernameSolicitar(limpio)
+    if (limpio.length >= 2) {
+      const resultados = await buscarUsuarios(limpio)
       setResultadosBusqueda(resultados.filter(r => r.id !== usuario.id))
     } else {
       setResultadosBusqueda([])
@@ -263,7 +265,7 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
                 className="input-reto"
                 placeholder={t('amigos.buscarPlaceholder')}
                 value={usernameSolicitar}
-                onChange={e => handleBuscar(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                onChange={e => handleBuscar(e.target.value)}
               />
               {resultadosBusqueda.length > 0 && (
                 <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>

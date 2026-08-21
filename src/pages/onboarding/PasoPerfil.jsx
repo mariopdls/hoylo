@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../services/supabase'
+import { normalizarUsername, validarUsername } from '../../utils/username'
 import logo from '../../assets/logo3.png'
 import SelectorUbicacion from '../../components/SelectorUbicacion'
 
@@ -38,6 +39,20 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
       return
     }
 
+    const usernameLimpio = normalizarUsername(username)
+    const validacion = validarUsername(usernameLimpio)
+    if (!validacion.valido) {
+      const mensaje =
+        validacion.razon === 'longitud'
+          ? t('perfil.usernameLongitud')
+          : validacion.razon === 'prohibido'
+            ? t('perfil.usernameProhibido')
+            : t('perfil.usernameInvalido')
+      setErrorUsername(mensaje)
+      setUsername(usernameLimpio)
+      return
+    }
+
     const fechaNacimientoDate = new Date(año, mes - 1, dia)
     const hoy = new Date()
     let edad = hoy.getFullYear() - fechaNacimientoDate.getFullYear()
@@ -56,7 +71,7 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
     const { data } = await supabase
       .from('perfiles')
       .select('username')
-      .eq('username', username)
+      .eq('username', usernameLimpio)
       .maybeSingle()
 
     if (data) {
@@ -67,7 +82,7 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
 
     const fechaNacimiento = `${año}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
 
-    onRespuesta('perfil', { nombre, username, fecha_nacimiento: fechaNacimiento, sexo, ciudad, pais })
+    onRespuesta('perfil', { nombre, username: usernameLimpio, fecha_nacimiento: fechaNacimiento, sexo, ciudad, pais })
     setCargando(false)
     onNext()
   }
@@ -101,10 +116,10 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
               placeholder={t('perfil.username')}
               value={username}
               onChange={e => {
-              const valor = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
-              setUsername(valor)
-              setErrorUsername(null)
-            }}
+                const valor = normalizarUsername(e.target.value)
+                setUsername(valor)
+                setErrorUsername(null)
+              }}
             />
             {errorUsername && (
               <p style={{ fontSize: '12px', color: '#E24B4A', marginTop: '4px', paddingLeft: '8px' }}>

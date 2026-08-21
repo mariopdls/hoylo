@@ -5,6 +5,7 @@ import { subirFoto } from '../services/cloudinary'
 import { cargarParticipantes, invitarAmigo, cargarAmigos } from '../services/social'
 import { cargarComentarios, enviarComentario, eliminarComentario } from '../services/comentarios'
 import { supabase } from '../services/supabase'
+import { normalizarUsername } from '../utils/username'
 
 function CarruselFotos({ participantes }) {
   const [indice, setIndice] = useState(0)
@@ -151,7 +152,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast, permitirSubirFoto 
   const handleInvitar = () => enviarInvitacion(usernameInvitar.trim())
 
   const handleCambioUsernameInvitar = (valor) => {
-    const limpio = valor.toLowerCase().replace(/[^a-z0-9_]/g, '')
+    const limpio = normalizarUsername(valor)
     setUsernameInvitar(limpio)
 
     if (!limpio) { setSugerenciasInvitar([]); return }
