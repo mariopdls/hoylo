@@ -114,27 +114,5 @@ export async function pedirUnirseAReto(retoId) {
 }
 
 export async function cargarRetosDelMomento(idioma = 'es') {
-  const hoy = new Date().toISOString().split('T')[0]
-
-  const { data: existentes } = await supabase
-    .from('retos_ia_diarios')
-    .select('*')
-    .eq('fecha', hoy)
-
-  if (existentes && existentes.length > 0) {
-    return existentes
-  }
-
-  try {
-    const nuevosRetos = await generarRetosDelMomento(idioma)
-    const { data: insertados } = await supabase
-      .from('retos_ia_diarios')
-      .insert(nuevosRetos.map(r => ({ ...r, fecha: hoy })))
-      .select()
-
-    return insertados || []
-  } catch (e) {
-    console.error('Error generando retos IA:', e)
-    return []
-  }
+  return generarRetosDelMomento(idioma)
 }

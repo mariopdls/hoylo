@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../services/supabase'
-import { normalizarUsername, validarUsername } from '../../utils/username'
+import { formatearNombreVisible, normalizarNombre, normalizarUsername, validarUsername } from '../../utils/username'
 import logo from '../../assets/logo3.png'
 import SelectorUbicacion from '../../components/SelectorUbicacion'
 
@@ -22,14 +22,24 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
   const [sexo, setSexo] = useState('')
   const [ciudad, setCiudad] = useState('')
   const [pais, setPais] = useState('')
+  const [errorNombre, setErrorNombre] = useState(null)
   const [errorUsername, setErrorUsername] = useState(null)
   const [cargando, setCargando] = useState(false)
   const [mostrarSelector, setMostrarSelector] = useState(false)
 
   const continuar = async () => {
-    if (!nombre || !username) return
+    const nombreLimpio = formatearNombreVisible(nombre)
+    const usernameLimpio = normalizarUsername(username)
+
+    if (!nombreLimpio || !usernameLimpio) return
+
+    if (nombreLimpio.length < 2) {
+      setErrorNombre(t('perfil.nombreInvalido'))
+      return
+    }
 
     if (!dia || !mes || !año) {
+      setErrorNombre(null)
       setErrorUsername(t('perfil.fechaRequerida'))
       return
     }
@@ -39,7 +49,6 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
       return
     }
 
-    const usernameLimpio = normalizarUsername(username)
     const validacion = validarUsername(usernameLimpio)
     if (!validacion.valido) {
       const mensaje =
@@ -48,6 +57,7 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
           : validacion.razon === 'prohibido'
             ? t('perfil.usernameProhibido')
             : t('perfil.usernameInvalido')
+      setErrorNombre(null)
       setErrorUsername(mensaje)
       setUsername(usernameLimpio)
       return
@@ -61,11 +71,13 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
     if (aunNoCumplidos) edad -= 1
 
     if (edad < 14) {
+      setErrorNombre(null)
       setErrorUsername(t('perfil.edadMinima'))
       return
     }
 
     setCargando(true)
+    setErrorNombre(null)
     setErrorUsername(null)
 
     const { data } = await supabase
@@ -82,7 +94,7 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
 
     const fechaNacimiento = `${año}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
 
-    onRespuesta('perfil', { nombre, username: usernameLimpio, fecha_nacimiento: fechaNacimiento, sexo, ciudad, pais })
+    onRespuesta('perfil', { nombre: nombreLimpio, username: usernameLimpio, fecha_nacimiento: fechaNacimiento, sexo, ciudad, pais })
     setCargando(false)
     onNext()
   }
@@ -104,12 +116,23 @@ function PasoPerfil({ onNext, onBack, onRespuesta }) {
         <p className="guia-texto">{t('perfil.subtitulo')}</p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
-          <input
-            className="input-reto"
-            placeholder={t('perfil.nombre')}
-            value={nombre}
-            onChange={e => setNombre(e.target.value)}
-          />
+          <div>
+            <input
+              className="input-reto"
+              placeholder={t('perfil.nombre')}
+              value={nombre}
+              onChange={e => {
+                const valor = formatearNombreVisible(e.target.value)
+                setNombre(valor)
+                setErrorNombre(null)
+              }}
+            />
+            {errorNombre && (
+              <p style={{ fontSize: '12px', color: '#E24B4A', marginTop: '4px', paddingLeft: '8px' }}>
+                {errorNombre}
+              </p>
+            )}
+          </div>
           <div>
             <input
               className="input-reto"

@@ -84,6 +84,7 @@
     "titulo": "Tell us about you",
     "subtitulo": "Just a few basics to personalize your experience.",
     "nombre": "Your name",
+    "nombreInvalido": "Your name must have at least 2 letters and can only use letters, spaces, apostrophes, or hyphens.",
     "username": "@username",
     "usernameError": "That username is already taken, choose another.",
     "usernameInvalido": "Username can only contain letters, numbers, and underscores.",

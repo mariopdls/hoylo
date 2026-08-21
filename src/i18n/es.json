@@ -84,6 +84,7 @@
     "titulo": "Cuéntanos sobre ti",
     "subtitulo": "Solo unos datos básicos para personalizar tu experiencia.",
     "nombre": "Tu nombre",
+    "nombreInvalido": "Tu nombre debe tener al menos 2 letras y solo usar letras, espacios, apóstrofes o guiones.",
     "username": "@username",
     "usernameError": "Ese username ya está en uso, elige otro.",
     "usernameInvalido": "El username solo puede tener letras, números y guion bajo.",

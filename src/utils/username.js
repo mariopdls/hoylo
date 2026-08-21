@@ -1,4 +1,5 @@
 export const USERNAME_MAX_LENGTH = 12
+export const NOMBRE_MAX_LENGTH = 24
 
 const PALABRAS_PROHIBIDAS = [
   'puta', 'puto', 'culo', 'mierda', 'gilipollas', 'idiota', 'imbecil',
@@ -6,6 +7,29 @@ const PALABRAS_PROHIBIDAS = [
   'pene', 'penis', 'porno', 'porn', 'follar', 'bastardo', 'bastarda',
   'mamon', 'mamona', 'sudaca', 'tonto', 'tonta'
 ]
+
+export function formatearNombreVisible(valor = '') {
+  return normalizarNombre(valor)
+    .split(' ')
+    .filter(Boolean)
+    .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
+    .join(' ')
+    .slice(0, NOMBRE_MAX_LENGTH)
+}
+
+export function normalizarNombre(valor = '') {
+  return valor
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ'\-\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, NOMBRE_MAX_LENGTH)
+}
+
+export function formatearUsernameVisible(valor = '') {
+  return normalizarUsername(valor)
+}
 
 export function normalizarUsername(valor = '') {
   return valor
