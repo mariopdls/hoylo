@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { supabase } from '../../services/supabase'
 import logo from '../../assets/logo3.png'
 
 const AFICIONES_BASE_ES = [
@@ -15,38 +14,62 @@ const AFICIONES_BASE_EN = [
   '💻 Technology', '🎬 Cinema', '🧘 Meditation', '📷 Photography'
 ]
 
-const GROQ_ENDPOINT = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api/groq`
-  : '/api/groq'
+const SUGERENCIAS_LOCAL_ES = {
+  '🎵 Música': ['🎸 Guitarra', '🎹 Piano', '🎤 Canto', '🎧 Producción'],
+  '📚 Lectura': ['📖 Poesía', '🧠 Filosofía', '📝 Escritura', '📚 Biografías'],
+  '🏃 Deporte': ['🏊 Natación', '🚴 Ciclismo', '🏋️ Fuerza', '🥾 Senderismo'],
+  '🎨 Arte': ['🖌️ Dibujo', '🧵 Costura', '🎨 Acuarela', '🪄 Manualidades'],
+  '🎮 Videojuegos': ['🎮 Esports', '🕹️ Retro', '🧩 Puzzle', '🏆 Competición'],
+  '🍳 Cocina': ['🥘 Recetas', '🍰 Repostería', '🥬 Cocina saludable', '🌮 Cocina internacional'],
+  '✈️ Viajes': ['🧭 Exploración', '🏞️ Naturaleza', '📍 Rutas locales', '🌍 Cultura'],
+  '🌱 Naturaleza': ['🌿 Jardinería', '🐝 Ecología', '🌼 Flores', '🌳 Senderismo'],
+  '💻 Tecnología': ['🤖 IA', '🧩 Programación', '📱 Gadget', '🖥️ Diseño digital'],
+  '🎬 Cine': ['🎞️ Documentales', '🧠 Cine de autor', '🎬 Clásicos', '🍿 Cine en familia'],
+  '🧘 Meditación': ['🧘 Respiración', '🌊 Mindfulness', '✨ Relax', '🫶 Bienestar'],
+  '📷 Fotografía': ['📸 Retrato', '🌄 Paisajes', '🧭 Viajes fotográficos', '🎞️ Storytelling']
+}
 
-async function obtenerSugerencias(aficionesSeleccionadas, idioma) {
-  const prompt = idioma === 'es'
-    ? `El usuario tiene estas aficiones: ${aficionesSeleccionadas.join(', ')}.
-Sugiere exactamente 6 aficiones más específicas relacionadas con las que ya tiene.
-Cada una debe tener un emoji y un nombre corto.
-Responde ÚNICAMENTE con un array JSON, sin texto extra, sin markdown.
-Formato: ["🎸 Guitarra", "🎹 Piano", "🎤 Canto"]`
-    : `The user has these hobbies: ${aficionesSeleccionadas.join(', ')}.
-Suggest exactly 6 more specific hobbies related to what they already have.
-Each one must have an emoji and a short name.
-Reply ONLY with a valid JSON array, no extra text, no markdown.
-Format: ["🎸 Guitar", "🎹 Piano", "🎤 Singing"]`
+const SUGERENCIAS_LOCAL_EN = {
+  '🎵 Music': ['🎸 Guitar', '🎹 Piano', '🎤 Singing', '🎧 Production'],
+  '📚 Reading': ['📖 Poetry', '🧠 Philosophy', '📝 Writing', '📚 Biographies'],
+  '🏃 Sport': ['🏊 Swimming', '🚴 Cycling', '🏋️ Strength', '🥾 Hiking'],
+  '🎨 Art': ['🖌️ Drawing', '🧵 Sewing', '🎨 Watercolor', '🪄 Crafts'],
+  '🎮 Video games': ['🎮 Esports', '🕹️ Retro games', '🧩 Puzzles', '🏆 Competition'],
+  '🍳 Cooking': ['🥘 Recipes', '🍰 Baking', '🥬 Healthy cooking', '🌮 International food'],
+  '✈️ Travel': ['🧭 Exploration', '🏞️ Nature', '📍 Local routes', '🌍 Culture'],
+  '🌱 Nature': ['🌿 Gardening', '🐝 Ecology', '🌼 Flowers', '🌳 Hiking'],
+  '💻 Technology': ['🤖 AI', '🧩 Programming', '📱 Gadgets', '🖥️ Digital design'],
+  '🎬 Cinema': ['🎞️ Documentaries', '🧠 Art cinema', '🎬 Classics', '🍿 Family movies'],
+  '🧘 Meditation': ['🧘 Breathing', '🌊 Mindfulness', '✨ Relaxation', '🫶 Wellness'],
+  '📷 Photography': ['📸 Portraits', '🌄 Landscapes', '🧭 Travel photography', '🎞️ Storytelling']
+}
 
-  const { data: { session } } = await supabase.auth.getSession()
+function obtenerSugerencias(aficionesSeleccionadas, idioma) {
+  const mapa = idioma === 'es' ? SUGERENCIAS_LOCAL_ES : SUGERENCIAS_LOCAL_EN
+  const seleccionadas = new Set(aficionesSeleccionadas)
+  const sugerencias = []
 
-  const response = await fetch(GROQ_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
-    },
-    body: JSON.stringify({
-      messages: [{ role: 'user', content: prompt }]
-    })
-  })
+  for (const aficion of aficionesSeleccionadas) {
+    const relacionados = mapa[aficion] || []
+    for (const sugerencia of relacionados) {
+      if (!seleccionadas.has(sugerencia) && !sugerencias.includes(sugerencia)) {
+        sugerencias.push(sugerencia)
+      }
+    }
+  }
 
-  const data = await response.json()
-  return JSON.parse(data.choices[0].message.content)
+  const adicionales = Object.values(mapa)
+    .flat()
+    .filter(sugerencia => !seleccionadas.has(sugerencia) && !sugerencias.includes(sugerencia))
+
+  for (const sugerencia of adicionales) {
+    if (sugerencias.length >= 6) break
+    if (!sugerencias.includes(sugerencia)) {
+      sugerencias.push(sugerencia)
+    }
+  }
+
+  return sugerencias.slice(0, 6)
 }
 
 function PasoAficiones({ onNext, onBack, onRespuesta }) {
@@ -67,12 +90,14 @@ function PasoAficiones({ onNext, onBack, onRespuesta }) {
     if (nuevas.length >= 2 && !seleccionadas.includes(aficion)) {
       setCargandoSugerencias(true)
       try {
-        const sugs = await obtenerSugerencias(nuevas, i18n.language)
+        const sugs = obtenerSugerencias(nuevas, i18n.language)
         setSugeridas(sugs.filter(s => !nuevas.includes(s)))
       } catch (e) {
         console.error(e)
+        setSugeridas([])
+      } finally {
+        setCargandoSugerencias(false)
       }
-      setCargandoSugerencias(false)
     }
   }
 
