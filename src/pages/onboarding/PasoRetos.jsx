@@ -19,7 +19,7 @@ function PasoRetos({ respuestas, onFin, onBack }) {
   const [esPublico, setEsPublico] = useState(false)
 
   const generar = () => {
-    generarRetos(respuestas, i18n.language)
+    Promise.resolve(generarRetos(respuestas, i18n.language))
       .then(data => {
         setRetos(data)
         setCargando(false)
