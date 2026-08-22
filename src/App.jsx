@@ -88,7 +88,7 @@ function App() {
       }
       await Browser.close()
     })
-    return () => { listener.then(l => l.remove()) }
+    return () => { Promise.resolve(listener).then(l => l.remove()) }
   }, [])
 
   const mostrarToast = (texto, tipo = 'ok') => {
@@ -295,7 +295,7 @@ function App() {
     const radio = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
 
     const transicion = document.startViewTransition(aplicarCambio)
-    transicion.ready.then(() => {
+    Promise.resolve(transicion?.ready).then(() => {
       document.documentElement.animate(
         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radio}px at ${x}px ${y}px)`] },
         { duration: 550, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
