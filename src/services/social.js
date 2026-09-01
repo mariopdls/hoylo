@@ -338,13 +338,6 @@ export async function buscarUsuarios(query) {
   return data || []
 }
 
-function obtenerHoyLocal() {
-  const hoy = new Date()
-  return hoy.getFullYear() + '-' +
-    String(hoy.getMonth() + 1).padStart(2, '0') + '-' +
-    String(hoy.getDate()).padStart(2, '0')
-}
-
 export async function cargarActividadAmigos() {
   const amigos = await cargarAmigos()
   if (amigos.length === 0) return []
