@@ -25,8 +25,17 @@ function Login() {
     return 'Ha ocurrido un error, inténtalo de nuevo.'
   }
 
+  const validarEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return regex.test(email)
+  }
+
   const handleSubmit = async () => {
     if (!email || !password) return
+    if (!validarEmail(email)) {
+      setError('Formato de email inválido.')
+      return
+    }
     setCargando(true)
     setError(null)
 

@@ -25,25 +25,39 @@ function Perfil({ usuario, onToast }) {
   useEffect(() => { cargarPerfil() }, [])
 
   const cargarPerfil = async () => {
-    const { data } = await supabase.from('perfiles').select('*').eq('id', usuario.id).maybeSingle()
-    if (data) setPerfil(data)
-    setCargando(false)
+    try {
+      const { data, error } = await supabase.from('perfiles').select('*').eq('id', usuario.id).maybeSingle()
+      if (error) throw error
+      if (data) setPerfil(data)
+    } catch (err) {
+      console.error('Error cargando perfil:', err)
+      onToast?.(t('toast.error'), 'error')
+    } finally {
+      setCargando(false)
+    }
   }
 
   const guardarPerfil = async () => {
-    setGuardando(true)
-    await supabase.from('perfiles').update({
-      nombre: perfil.nombre,
-      bio: perfil.bio,
-      fecha_nacimiento: perfil.fecha_nacimiento,
-      sexo: perfil.sexo,
-      ciudad: perfil.ciudad,
-      pais: perfil.pais,
-      aficiones: perfil.aficiones
-    }).eq('id', usuario.id)
-    setGuardando(false)
-    setEditando(false)
-    onToast?.(t('toast.perfilGuardado'))
+    try {
+      setGuardando(true)
+      const { error } = await supabase.from('perfiles').update({
+        nombre: perfil.nombre,
+        bio: perfil.bio?.substring(0, 150),
+        fecha_nacimiento: perfil.fecha_nacimiento,
+        sexo: perfil.sexo,
+        ciudad: perfil.ciudad,
+        pais: perfil.pais,
+        aficiones: perfil.aficiones
+      }).eq('id', usuario.id)
+      if (error) throw error
+      setEditando(false)
+      onToast?.(t('toast.perfilGuardado'))
+    } catch (err) {
+      console.error('Error guardando perfil:', err)
+      onToast?.(t('toast.errorGuardandoPerfil'), 'error')
+    } finally {
+      setGuardando(false)
+    }
   }
 
   const handleFotoPerfil = async (e) => {

@@ -59,18 +59,20 @@ export async function cargarRetosDeAmigos(usuarioId) {
 
   const retosFiltrados = retosAmigos.filter(r => !misRetoIds.has(r.id))
 
-  const conPerfil = await Promise.all(
-    retosFiltrados.map(async (r) => {
-      const { data: perfil } = await supabase
-        .from('perfiles')
-        .select('nombre, username')
-        .eq('id', r.usuario_id)
-        .maybeSingle()
-      return { ...r, creador: perfil }
-    })
-  )
+  // ✅ JOIN en lugar de N+1 queries
+  const retoIds = retosFiltrados.map(r => r.id)
+  const { data: retosConPerfil } = await supabase
+    .from('retos')
+    .select(`
+      *,
+      perfiles:usuario_id(nombre, username)
+    `)
+    .in('id', retoIds)
 
-  return conPerfil
+  return (retosConPerfil || []).map(r => ({
+    ...r,
+    creador: r.perfiles || {}
+  }))
 }
 
 export async function pedirUnirseAReto(retoId) {

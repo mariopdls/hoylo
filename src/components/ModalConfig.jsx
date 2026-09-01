@@ -58,27 +58,43 @@ function ModalConfig({ onCerrar, idioma, onToggleIdioma, darkMode, onToggleDark,
 
   const togglePerfilPublico = async () => {
     const nuevo = !perfilPublico
-    setPerfilPublico(nuevo)
-    const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('perfiles').update({ perfil_publico: nuevo }).eq('id', user.id)
+    const anterior = perfilPublico
+    try {
+      setPerfilPublico(nuevo)
+      const { data: { user } } = await supabase.auth.getUser()
+      const { error } = await supabase.from('perfiles').update({ perfil_publico: nuevo }).eq('id', user.id)
+      if (error) {
+        setPerfilPublico(anterior)
+        onToast?.(t('config.error'), 'error')
+      }
+    } catch (err) {
+      setPerfilPublico(anterior)
+      onToast?.(t('config.error'), 'error')
+    }
   }
 
   const handleEliminarCuenta = async () => {
     setEliminando(true)
-    const { data: { session } } = await supabase.auth.getSession()
-    const respuesta = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/eliminar-cuenta`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
-      }
-    })
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const respuesta = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/eliminar-cuenta`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
 
-    if (respuesta.ok) {
-      await supabase.auth.signOut()
-    } else {
-      setEliminando(false)
+      if (respuesta.ok) {
+        await supabase.auth.signOut()
+      } else {
+        onToast?.(t('config.errorEliminarCuenta'), 'error')
+      }
+    } catch (error) {
+      console.error('Error eliminando cuenta:', error)
       onToast?.(t('config.errorEliminarCuenta'), 'error')
+    } finally {
+      setEliminando(false)
     }
   }
 

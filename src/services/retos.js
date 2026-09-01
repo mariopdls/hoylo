@@ -120,11 +120,9 @@ export async function completarDia(retoId, fotoUrl = null) {
     .eq('usuario_id', user.id)
     .single()
 
-  if (participante?.ultima_foto_fecha === hoy) {
-    return { error: 'Ya subiste la foto de hoy' }
-  }
-
-  const { error } = await supabase
+  // ✅ Validación con WHERE para evitar race condition
+  // Si otro request cambió ultima_foto_fecha, el update no hará nada
+  const { data, error } = await supabase
     .from('participantes_reto')
     .update({
       ultima_foto_fecha: hoy,
@@ -133,6 +131,13 @@ export async function completarDia(retoId, fotoUrl = null) {
     })
     .eq('reto_id', retoId)
     .eq('usuario_id', user.id)
+    .eq('ultima_foto_fecha', participante?.ultima_foto_fecha || null) // Validación atómica
+    .select()
+
+  // Si el update no modificó nada, significa que otra request ya cambió el estado
+  if (!data || data.length === 0) {
+    return { error: 'Ya subiste la foto de hoy' }
+  }
 
   if (error) return { error: 'Error al guardar el progreso' }
 
