@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { actualizarTituloReto, completarDia } from '../services/retos'
 import { subirFoto } from '../services/cloudinary'
@@ -7,7 +7,8 @@ import { cargarComentarios, enviarComentario, eliminarComentario } from '../serv
 import { supabase } from '../services/supabase'
 import { normalizarUsername } from '../utils/username'
 
-function CarruselFotos({ participantes }) {
+// ARREGLO: Memoizar CarruselFotos para evitar re-renders innecesarios
+const CarruselFotos = React.memo(function CarruselFotos({ participantes }) {
   const [indice, setIndice] = useState(0)
   const startX = useRef(null)
 
@@ -67,7 +68,7 @@ function CarruselFotos({ participantes }) {
       )}
     </div>
   )
-}
+})
 
 function DetalleReto({ reto, onVolver, onActualizar, onToast, permitirSubirFoto = true }) {
   const { t } = useTranslation()
@@ -85,6 +86,9 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast, permitirSubirFoto 
   const [comentarios, setComentarios] = useState([])
   const [nuevoComentario, setNuevoComentario] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [enviandoInvitacion, setEnviandoInvitacion] = useState(false)
+  const [comentariosPagina, setComentariosPagina] = useState(0)
+  const [totalComentarios, setTotalComentarios] = useState(0)
 
   const inputFotoRef = useRef(null)
 
@@ -101,8 +105,11 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast, permitirSubirFoto 
     setParticipantes(data)
     const listaAmigos = await cargarAmigos()
     setAmigos(listaAmigos)
-    const coms = await cargarComentarios(reto.id)
+    // ARREGLO PAGINACIÓN: Cargar solo página 0 (primeros 20 comentarios)
+    const { comentarios: coms, total } = await cargarComentarios(reto.id, 0, 20)
     setComentarios(coms)
+    setTotalComentarios(total)
+    setComentariosPagina(0)
     const miParticipacion = data.find(p => p.usuario_id === user?.id)
     if (miParticipacion?.foto_hoy) setFotoSubida(true)
     if (miParticipacion?.dias_completados) setProgresoActual(miParticipacion.dias_completados)
@@ -139,13 +146,18 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast, permitirSubirFoto 
   }
 
   const enviarInvitacion = async (username) => {
-    if (!username) return
-    const resultado = await invitarAmigo(reto.id, username)
-    onToast?.(resultado.error || t('toast.invitacionEnviada'), resultado.error ? 'error' : 'ok')
-    if (!resultado.error) {
-      setUsernameInvitar('')
-      setSugerenciasInvitar([])
-      setMostrarInvitar(false)
+    if (!username || enviandoInvitacion) return
+    setEnviandoInvitacion(true)
+    try {
+      const resultado = await invitarAmigo(reto.id, username)
+      onToast?.(resultado.error || t('toast.invitacionEnviada'), resultado.error ? 'error' : 'ok')
+      if (!resultado.error) {
+        setUsernameInvitar('')
+        setSugerenciasInvitar([])
+        setMostrarInvitar(false)
+      }
+    } finally {
+      setEnviandoInvitacion(false)
     }
   }
 
@@ -274,7 +286,7 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast, permitirSubirFoto 
                 onChange={e => handleCambioUsernameInvitar(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleInvitar() }}
               />
-              <button className="btn-añadir" onClick={handleInvitar}>
+              <button className="btn-añadir" onClick={handleInvitar} disabled={enviandoInvitacion} style={{ opacity: enviandoInvitacion ? 0.5 : 1, cursor: enviandoInvitacion ? 'not-allowed' : 'pointer' }}>
                 <i className="ti ti-send"></i>
               </button>
             </div>
@@ -333,25 +345,42 @@ function DetalleReto({ reto, onVolver, onActualizar, onToast, permitirSubirFoto 
             {comentarios.length === 0 ? (
               <p className="guia-texto" style={{ fontSize: '13px' }}>{t('detalle.primerComentario')}</p>
             ) : (
-              comentarios.map((c, i) => (
-                <div key={c.id} style={{ display: 'flex', gap: '8px', animation: `staggerIn 0.25s ease ${i * 0.03}s both` }}>
-                  <div className="participante-avatar" style={{ width: '28px', height: '28px', fontSize: '11px', flexShrink: 0, overflow: 'hidden' }}>
-                    {c.perfil?.avatar_url
-                      ? <img src={c.perfil.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : c.perfil?.nombre?.charAt(0).toUpperCase() || '?'
-                    }
+              <>
+                {comentarios.map((c, i) => (
+                  <div key={c.id} style={{ display: 'flex', gap: '8px', animation: `staggerIn 0.25s ease ${i * 0.03}s both` }}>
+                    <div className="participante-avatar" style={{ width: '28px', height: '28px', fontSize: '11px', flexShrink: 0, overflow: 'hidden' }}>
+                      {c.perfil?.avatar_url
+                        ? <img src={c.perfil.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : c.perfil?.nombre?.charAt(0).toUpperCase() || '?'
+                      }
+                    </div>
+                    <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', padding: '8px 12px', flex: 1 }}>
+                      <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.perfil?.nombre || c.perfil?.username}</p>
+                      <p style={{ fontSize: '13px', color: 'var(--text-primary)', marginTop: '2px' }}>{c.texto}</p>
+                    </div>
+                    {c.usuario_id === usuarioActualId && (
+                      <button onClick={() => handleEliminarComentario(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '14px', alignSelf: 'center' }}>
+                        <i className="ti ti-x"></i>
+                      </button>
+                    )}
                   </div>
-                  <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', padding: '8px 12px', flex: 1 }}>
-                    <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.perfil?.nombre || c.perfil?.username}</p>
-                    <p style={{ fontSize: '13px', color: 'var(--text-primary)', marginTop: '2px' }}>{c.texto}</p>
-                  </div>
-                  {c.usuario_id === usuarioActualId && (
-                    <button onClick={() => handleEliminarComentario(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '14px', alignSelf: 'center' }}>
-                      <i className="ti ti-x"></i>
-                    </button>
-                  )}
-                </div>
-              ))
+                ))}
+                {/* ARREGLO PAGINACIÓN: Mostrar botón si hay más comentarios */}
+                {comentarios.length < totalComentarios && (
+                  <button
+                    className="btn-dias"
+                    style={{ fontSize: '12px', padding: '8px 12px', marginTop: '8px' }}
+                    onClick={async () => {
+                      const siguiente = comentariosPagina + 1
+                      const { comentarios: nuevosComs } = await cargarComentarios(reto.id, siguiente, 20)
+                      setComentarios([...comentarios, ...nuevosComs])
+                      setComentariosPagina(siguiente)
+                    }}
+                  >
+                    {t('general.cargarMas') || 'Cargar más'}
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -1,7 +1,22 @@
 import { supabase } from './supabase'
 
+// Obtener fecha local en lugar de UTC para sincronización correcta de timezone
+function obtenerHoyLocal() {
+  const hoy = new Date()
+  return hoy.getFullYear() + '-' +
+    String(hoy.getMonth() + 1).padStart(2, '0') + '-' +
+    String(hoy.getDate()).padStart(2, '0')
+}
+
+function obtenerAyerLocal() {
+  const ayer = new Date(Date.now() - 86400000)
+  return ayer.getFullYear() + '-' +
+    String(ayer.getMonth() + 1).padStart(2, '0') + '-' +
+    String(ayer.getDate()).padStart(2, '0')
+}
+
 export async function cargarRetos(usuarioId) {
-  const hoy = new Date().toISOString().split('T')[0]
+  const hoy = obtenerHoyLocal()
 
   const [{ data: retosDirectos }, { data: participaciones }] = await Promise.all([
     supabase
@@ -37,12 +52,21 @@ export async function cargarRetos(usuarioId) {
 }
 
 export async function guardarReto(usuarioId, reto) {
+  // VALIDACIÓN: Título debe tener 1-50 caracteres
+  const titulo = reto.titulo?.trim() || ''
+  if (!titulo || titulo.length < 1) {
+    return { error: 'El título no puede estar vacío' }
+  }
+  if (titulo.length > 50) {
+    return { error: 'El título no puede superar 50 caracteres' }
+  }
+
   const { data, error } = await supabase
     .from('retos')
     .insert({
       usuario_id: usuarioId,
       emoji: reto.emoji,
-      titulo: reto.titulo,
+      titulo: titulo,
       dias: reto.dias,
       dia_actual: 1,
       es_publico: reto.es_publico || false
@@ -52,7 +76,7 @@ export async function guardarReto(usuarioId, reto) {
 
   if (error) {
     console.error('Error guardando reto:', error)
-    return null
+    return { error: 'Error al guardar el reto' }
   }
 
   await supabase
@@ -87,7 +111,7 @@ export async function actualizarTituloReto(retoId, titulo) {
 
 export async function completarDia(retoId, fotoUrl = null) {
   const { data: { user } } = await supabase.auth.getUser()
-  const hoy = new Date().toISOString().split('T')[0]
+  const hoy = obtenerHoyLocal()
 
   const { data: participante } = await supabase
     .from('participantes_reto')
@@ -98,15 +122,6 @@ export async function completarDia(retoId, fotoUrl = null) {
 
   if (participante?.ultima_foto_fecha === hoy) {
     return { error: 'Ya subiste la foto de hoy' }
-  }
-
-  // Borrar foto antigua si tiene más de 24 horas
-  let fotoAnterior = null
-  if (participante?.foto_url && participante?.ultima_foto_fecha) {
-    const hace24Horas = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-    if (participante.ultima_foto_fecha < hace24Horas) {
-      fotoAnterior = participante.foto_url
-    }
   }
 
   const { error } = await supabase
@@ -127,7 +142,7 @@ export async function completarDia(retoId, fotoUrl = null) {
     .eq('id', user.id)
     .single()
 
-  const ayer = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  const ayer = obtenerAyerLocal()
 
   let nuevaRacha
   if (perfilActual?.racha_ultima_fecha === hoy) {

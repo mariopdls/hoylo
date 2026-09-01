@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
 import { createPortal } from 'react-dom'
@@ -101,16 +101,34 @@ function Amigos({ usuario, retosUsuario, onRecargarRetos, onRecargarNotificacion
     onToast?.(t('toast.solicitudRechazada'))
   }
 
-  const handleBuscar = async (valor) => {
-    const limpio = normalizarUsername(valor)
-    setUsernameSolicitar(limpio)
-    if (limpio.length >= 2) {
-      const resultados = await buscarUsuarios(limpio)
-      setResultadosBusqueda(resultados.filter(r => r.id !== usuario.id))
-    } else {
-      setResultadosBusqueda([])
+  const buscarUsuariosDebounced = useRef(null)
+
+  // ARREGLO SIN DEBOUNCE: Agregar debounce de 300ms para búsqueda
+  useEffect(() => {
+    // Crear función debounced que busca usuarios
+    const hacerBusqueda = async (valor) => {
+      const limpio = normalizarUsername(valor)
+      setUsernameSolicitar(limpio)
+      if (limpio.length >= 2) {
+        const resultados = await buscarUsuarios(limpio)
+        setResultadosBusqueda(resultados.filter(r => r.id !== usuario.id))
+      } else {
+        setResultadosBusqueda([])
+      }
     }
-  }
+
+    let timeoutId
+    buscarUsuariosDebounced.current = (valor) => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => hacerBusqueda(valor), 300)
+    }
+
+    return () => clearTimeout(timeoutId)
+  }, [usuario.id])
+
+  const handleBuscar = useCallback((valor) => {
+    buscarUsuariosDebounced.current?.(valor)
+  }, [])
 
   const handleSolicitarDesdeResultado = async (u) => {
     const resultado = await enviarSolicitudAmistad(u.username)

@@ -1,11 +1,12 @@
-import { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import ModalNuevoReto from '../components/ModalNuevoReto'
 import ModalEliminarReto from '../components/ModalEliminarReto'
 import DetalleReto from './DetalleReto'
 
-function RetoCard({ reto, onEliminar, onAbrir, esAdmin }) {
+// ARREGLO: Memoizar RetoCard para evitar renders innecesarios al cambiar padre
+const RetoCard = React.memo(function RetoCard({ reto, onEliminar, onAbrir, esAdmin }) {
   const [offsetX, setOffsetX] = useState(0)
   const startX = useRef(null)
   const isDragging = useRef(false)
@@ -82,7 +83,7 @@ function RetoCard({ reto, onEliminar, onAbrir, esAdmin }) {
       </div>
     </div>
   )
-}
+})
 
 function Home({ retos, usuario, onNuevoReto, onEliminarReto, onActualizarReto, onToast }) {
   const { t } = useTranslation()

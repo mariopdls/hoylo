@@ -1,6 +1,11 @@
 import { supabase } from './supabase'
 
 export async function invitarAmigo(retoId, username) {
+  // Validar que no sea una invitación vacía
+  if (!username?.trim()) {
+    return { error: 'Username requerido' }
+  }
+
   const { data: perfil } = await supabase
     .from('perfiles')
     .select('id')
@@ -30,6 +35,8 @@ export async function invitarAmigo(retoId, username) {
 
   if (invitacionExistente) return { error: 'Ya enviaste una invitación a este usuario' }
 
+  // PROTECCIÓN CONTRA DOUBLE-CLICK
+  // El cliente debe verificar estado "enviando" en componente
   const { error } = await supabase
     .from('invitaciones')
     .insert({
@@ -44,32 +51,30 @@ export async function invitarAmigo(retoId, username) {
 }
 
 export async function cargarInvitacionesPendientes(username) {
-  const { data } = await supabase
+  // ARREGLO DE N+1: Usar JOIN en lugar de Promise.all
+  const { data, error } = await supabase
     .from('invitaciones')
     .select(`
       id,
       reto_id,
       de_usuario_id,
       estado,
-      retos (titulo, emoji, dias)
+      retos (titulo, emoji, dias),
+      perfiles:de_usuario_id(nombre, username)
     `)
     .eq('para_username', username)
     .eq('estado', 'pendiente')
 
-  if (!data) return []
+  if (error || !data) return []
 
-  const invitacionesConPerfil = await Promise.all(
-    data.map(async (inv) => {
-      const { data: perfil } = await supabase
-        .from('perfiles')
-        .select('nombre, username')
-        .eq('id', inv.de_usuario_id)
-        .maybeSingle()
-      return { ...inv, perfiles: perfil }
-    })
-  )
-
-  return invitacionesConPerfil
+  return data.map(inv => ({
+    id: inv.id,
+    reto_id: inv.reto_id,
+    de_usuario_id: inv.de_usuario_id,
+    estado: inv.estado,
+    retos: inv.retos,
+    perfiles: inv.perfiles
+  }))
 }
 
 export async function aceptarInvitacion(invitacionId, retoId, usuarioId) {
@@ -111,28 +116,37 @@ export async function rechazarInvitacion(invitacionId) {
   return { ok: true }
 }
 
-export async function cargarParticipantes(retoId) {
-  const hoy = new Date().toISOString().split('T')[0]
+// Obtener fecha local en lugar de UTC
+function obtenerHoyLocal() {
+  const hoy = new Date()
+  return hoy.getFullYear() + '-' +
+    String(hoy.getMonth() + 1).padStart(2, '0') + '-' +
+    String(hoy.getDate()).padStart(2, '0')
+}
 
-  const { data } = await supabase
+export async function cargarParticipantes(retoId) {
+  const hoy = obtenerHoyLocal()
+
+  // ARREGLO DE N+1: Usar JOIN en lugar de Promise.all con queries individuales
+  const { data, error } = await supabase
     .from('participantes_reto')
-    .select('id, rol, ultima_foto_fecha, foto_url, dias_completados, usuario_id')
+    .select(`
+      id,
+      rol,
+      ultima_foto_fecha,
+      foto_url,
+      dias_completados,
+      usuario_id,
+      perfiles:usuario_id(nombre, username, avatar_url)
+    `)
     .eq('reto_id', retoId)
 
-  if (!data) return []
+  if (error || !data) return []
 
-  const participantesConPerfil = await Promise.all(
-    data.map(async (p) => {
-      const { data: perfil } = await supabase
-        .from('perfiles')
-        .select('nombre, username, avatar_url')
-        .eq('id', p.usuario_id)
-        .maybeSingle()
-      return { ...p, foto_hoy: p.ultima_foto_fecha === hoy, perfiles: perfil }
-    })
-  )
-
-  return participantesConPerfil
+  return data.map(p => ({
+    ...p,
+    foto_hoy: p.ultima_foto_fecha === hoy
+  }))
 }
 
 export async function abandonarReto(retoId, usuarioId) {
@@ -189,26 +203,24 @@ export async function enviarSolicitudAmistad(usernameDestino) {
 export async function cargarSolicitudesPendientes() {
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data } = await supabase
+  // ARREGLO DE N+1: Usar JOIN en lugar de Promise.all
+  const { data, error } = await supabase
     .from('solicitudes_amistad')
-    .select('id, de_usuario_id, creado_at')
+    .select(`
+      id,
+      de_usuario_id,
+      creado_at,
+      perfiles:de_usuario_id(nombre, username, avatar_url)
+    `)
     .eq('para_usuario_id', user.id)
     .eq('estado', 'pendiente')
 
-  if (!data) return []
+  if (error || !data) return []
 
-  const conPerfil = await Promise.all(
-    data.map(async (s) => {
-      const { data: perfil } = await supabase
-        .from('perfiles')
-        .select('nombre, username, avatar_url')
-        .eq('id', s.de_usuario_id)
-        .maybeSingle()
-      return { ...s, perfil }
-    })
-  )
-
-  return conPerfil
+  return data.map(s => ({
+    ...s,
+    perfil: s.perfiles
+  }))
 }
 
 export async function aceptarSolicitudAmistad(solicitudId, deUsuarioId) {
@@ -235,57 +247,51 @@ export async function rechazarSolicitudAmistad(solicitudId) {
 export async function cargarAmigos() {
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data } = await supabase
+  // ARREGLO DE N+1: Usar JOIN en lugar de Promise.all
+  const { data, error } = await supabase
     .from('amigos')
-    .select('amigo_id')
+    .select(`
+      amigo_id,
+      perfiles:amigo_id(id, nombre, username, avatar_url)
+    `)
     .eq('usuario_id', user.id)
 
-  if (!data) return []
+  if (error || !data) return []
 
-  const conPerfil = await Promise.all(
-    data.map(async (a) => {
-      const { data: perfil } = await supabase
-        .from('perfiles')
-        .select('nombre, username, avatar_url')
-        .eq('id', a.amigo_id)
-        .maybeSingle()
-      return perfil ? { ...perfil, id: a.amigo_id } : null
-    })
-  )
-
-  return conPerfil.filter(Boolean)
+  return data
+    .map(a => a.perfiles ? { ...a.perfiles, id: a.amigo_id } : null)
+    .filter(Boolean)
 }
 
 export async function cargarSolicitudesReto() {
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data } = await supabase
+  // ARREGLO DE N+1: Usar JOINs en lugar de Promise.all
+  // Antes: 1 query solicitudes + N queries retos + N queries perfiles = 1 + 2N queries
+  // Ahora: 1 query con 2 JOINs = 1 query total
+  const { data, error } = await supabase
     .from('solicitudes_reto')
-    .select('id, reto_id, usuario_id, estado')
+    .select(`
+      id,
+      reto_id,
+      usuario_id,
+      estado,
+      retos(titulo, emoji, dias),
+      perfiles:usuario_id(nombre, username)
+    `)
     .eq('para_admin_id', user.id)
     .eq('estado', 'pendiente')
 
-  if (!data) return []
+  if (error || !data) return []
 
-  const conDatos = await Promise.all(
-    data.map(async (s) => {
-      const { data: reto } = await supabase
-        .from('retos')
-        .select('titulo, emoji, dias')
-        .eq('id', s.reto_id)
-        .maybeSingle()
-
-      const { data: perfil } = await supabase
-        .from('perfiles')
-        .select('nombre, username')
-        .eq('id', s.usuario_id)
-        .maybeSingle()
-
-      return { ...s, reto, perfil }
-    })
-  )
-
-  return conDatos
+  return data.map(s => ({
+    id: s.id,
+    reto_id: s.reto_id,
+    usuario_id: s.usuario_id,
+    estado: s.estado,
+    reto: s.retos,
+    perfil: s.perfiles
+  }))
 }
 
 export async function aceptarSolicitudReto(solicitudId, retoId, usuarioId) {
@@ -332,11 +338,18 @@ export async function buscarUsuarios(query) {
   return data || []
 }
 
+function obtenerHoyLocal() {
+  const hoy = new Date()
+  return hoy.getFullYear() + '-' +
+    String(hoy.getMonth() + 1).padStart(2, '0') + '-' +
+    String(hoy.getDate()).padStart(2, '0')
+}
+
 export async function cargarActividadAmigos() {
   const amigos = await cargarAmigos()
   if (amigos.length === 0) return []
 
-  const hoy = new Date().toISOString().split('T')[0]
+  const hoy = obtenerHoyLocal()
   const amigoIds = amigos.map(a => a.id)
 
   const { data } = await supabase

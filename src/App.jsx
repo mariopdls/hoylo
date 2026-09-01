@@ -65,9 +65,19 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const handleResize = () => setEsPc(window.innerWidth >= 900)
+    // ARREGLO: Agregar debounce en resize para evitar renders excesivos
+    let timeoutId
+    const handleResize = () => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        setEsPc(window.innerWidth >= 900)
+      }, 250) // Debounce de 250ms
+    }
     window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    return () => {
+      clearTimeout(timeoutId)
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   useEffect(() => {
@@ -88,7 +98,7 @@ function App() {
       }
       await Browser.close()
     })
-    return () => { Promise.resolve(listener).then(l => l.remove()) }
+    return () => { listener?.remove?.() }
   }, [])
 
   const mostrarToast = (texto, tipo = 'ok') => {
