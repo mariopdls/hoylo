@@ -91,13 +91,22 @@ export async function completarDia(retoId, fotoUrl = null) {
 
   const { data: participante } = await supabase
     .from('participantes_reto')
-    .select('dias_completados, ultima_foto_fecha')
+    .select('dias_completados, ultima_foto_fecha, foto_url')
     .eq('reto_id', retoId)
     .eq('usuario_id', user.id)
     .single()
 
   if (participante?.ultima_foto_fecha === hoy) {
     return { error: 'Ya subiste la foto de hoy' }
+  }
+
+  // Borrar foto antigua si tiene más de 24 horas
+  let fotoAnterior = null
+  if (participante?.foto_url && participante?.ultima_foto_fecha) {
+    const hace24Horas = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+    if (participante.ultima_foto_fecha < hace24Horas) {
+      fotoAnterior = participante.foto_url
+    }
   }
 
   const { error } = await supabase
